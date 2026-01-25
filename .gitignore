@@ -1,0 +1,15 @@
+bin/
+/.venv
+*.jar
+/.agents
+/.claude
+/.codex
+/.config
+/.github
+/.opencode
+/.settings
+/.tmp-launch-config-compile
+/.classpath
+/.project
+/AGENTS.md
+/CLAUDE.md

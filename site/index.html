@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<title>eclipsectl-mcp - Model Context Protocol Server for Eclipse IDE - Update Site</title>
+<meta charset="UTF-8">
+<style>@import url("web/site.css");</style>
+<script type="text/javascript">
+function loadXMLFile(url) {
+  return new Promise(function(resolve, reject) {
+    var request = new XMLHttpRequest();
+    request.open("GET", url, true);
+    request.onreadystatechange = function() {
+      if (request.readyState === 4) {
+        if (request.status === 200 || request.status === 0) {
+          resolve(request.responseXML);
+        } else {
+          reject(Error("Error loading XML file: " + request.statusText));
+        }
+      }
+    };
+    request.send(null);
+  });
+}
+
+function init() {
+  Promise.all([loadXMLFile("site.xml"), loadXMLFile("web/site.xsl")])
+    .then(function(results) {
+        const xmlFile = results[0];
+        const stylesheet = results[1];
+
+        const processor = new XSLTProcessor();
+        processor.importStylesheet(stylesheet);
+        const transformed = processor.transformToDocument(xmlFile);
+        document.getElementById("data").innerHTML = transformed.body
+          ? transformed.body.innerHTML
+          : transformed.documentElement.innerHTML;
+    })
+    .catch(function(error) {
+      document.getElementById("data").textContent = "Error: " + error.message;
+    });
+}
+
+</script>
+</head>
+<body onload="init()">
+<div id="data"><!-- this is where the transformed data goes --></div>
+</body>
+</html>

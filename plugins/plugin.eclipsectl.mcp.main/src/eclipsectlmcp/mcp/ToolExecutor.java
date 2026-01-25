@@ -1,0 +1,143 @@
+package eclipsectlmcp.mcp;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
+
+import eclipsectlmcp.mcp.annotations.Tool;
+import eclipsectlmcp.mcp.annotations.ToolParam;
+
+public class ToolExecutor
+{
+    Object functions;
+    
+    public ToolExecutor( Object functions )
+    {
+        this.functions = functions;
+    }
+    
+    /**
+     * Retrieves an array of {@link Method}s that are declared as a function_call
+     * callback with the {@link Tool} annotation.
+     * 
+     * @return
+     */
+    public Method[] getFunctions()
+    {
+        return Arrays.stream( functions.getClass().getDeclaredMethods() )
+                .filter( method -> Objects.nonNull( method.getAnnotation( eclipsectlmcp.mcp.annotations.Tool.class ) ) )
+                .toArray( Method[]::new );
+    }
+    
+    
+
+    public CompletableFuture<Object> call( String name, Map<String, Object> args )
+    {
+        Method method = getFunctionCallbackByName( name ).orElseThrow( () -> new RuntimeException("Tool " + name + " not found!" ) ); 
+        method.getAnnotationsByType( eclipsectlmcp.mcp.annotations.ToolParam.class );
+        Object[] argValues = mapArguments( method, args );
+        CompletableFuture<Object> future = CompletableFuture.supplyAsync( () -> invokeMethod( method, argValues ) );
+        return future;
+    }
+    private Object invokeMethod( Method method, Object[] args )
+    {
+        try
+        {
+            return method.invoke( functions, args );
+        }
+        catch ( IllegalAccessException | IllegalArgumentException | InvocationTargetException e )
+        {
+            throw new RuntimeException( e );
+        }
+        
+    }
+    
+    public CompletableFuture<Object> call( String name, String[] args )
+    {
+        return call( name, toMap(args) );
+    }
+    
+    /**
+     * Creates an array of parameter values as declared by the callback {@link Method}
+     * 
+     * @param method
+     * @param argMap
+     * @return
+     */
+    public Object[] mapArguments( Method method, Map<String, Object> argMap )
+    {
+        return Arrays.stream( method.getParameters() )
+                    .map( ToolExecutor::toParamName )
+                    .map( argMap::get )
+                    .toArray();
+        
+    }
+
+    /**
+     * Converts a String array of key-value pairs into a Map.
+     * 
+     * @param keyVal the String array of key-value pairs
+     * @return the Map representation of the key-value pairs
+     * @throws IllegalArgumentException if the input array is not a key-value array
+     */
+    public Map<String, Object> toMap( String[] keyVal )
+    {
+        if ( keyVal.length % 2 != 0 )
+        {
+            throw new IllegalArgumentException("Not a key-val array");
+        }
+        var map = new HashMap<String, Object>();
+        for (int i = 0; i < keyVal.length; i += 2) 
+        {
+            map.put(keyVal[i], keyVal[i + 1]);
+        }
+        return map;
+    }
+
+    /**
+     * Retrieves the function callback method with the specified name.
+     *
+     * @param name the name of the function
+     * @return an Optional containing the function callback method, or an empty Optional if the function is not found
+     */
+    public Optional<Method> getFunctionCallbackByName( String name )
+    {
+        return Arrays.stream( getFunctions() )
+                     .filter( method -> toFunctionName( method ).equals( name ) )
+                     .findFirst();
+    }
+    /**
+     * Converts a Parameter object to its corresponding parameter name.
+     *
+     * @param parameter the Parameter object
+     * @return the parameter name, or the annotated name if present, or the default name if no annotation is found
+     */
+    public static String toParamName( Parameter parameter )
+    {
+        return Optional.ofNullable( parameter.getAnnotation( eclipsectlmcp.mcp.annotations.ToolParam.class ) )
+                    .map( ToolParam::name )
+                    .filter( Predicate.not( String::isBlank ) )
+                    .orElse( parameter.getName() );
+    }
+    /**
+     * Retrieves the name of the function based on the provided Method object.
+     *
+     * @param method the Method object representing the function
+     * @return the name of the function, or the annotated name if present, or the default name if no annotation is found
+     */
+    public static String toFunctionName( Method method )
+    {
+        return Optional.ofNullable( method.getAnnotation( eclipsectlmcp.mcp.annotations.Tool.class ) )
+                .map( Tool::name )
+                .filter( Predicate.not(String::isBlank))
+                .orElse( method.getName() );
+    }
+    
+}

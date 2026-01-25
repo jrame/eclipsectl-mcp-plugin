@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <description name="eclipsectl-mcp - Model Context Protocol server for Eclipse IDE" url="https://github.com/jrame/eclipsectl-mcp">
+      eclipsectl-mcp - Model Context Protocol server for Eclipse IDE
+   </description>
+   <feature url="features/eclipsectlmcp_1.0.0.202608022338.jar" id="eclipsectlmcp" version="1.0.0.202608022338"/>
+</site>

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         point="org.eclipse.ui.preferencePages">
+
+      <page
+            class="eclipsectlmcp.preferences.mcp.McpHttpServerPreferencePage"
+            id="eclipsectlmcp.preferences.McpHttpServerPreferencePage"
+            name="eclipsectl-mcp">
+      </page>
+      <page
+            id="eclipsectlmcp.preferences.McpServerPreferencePage"
+            name="MCP Servers"
+            category="eclipsectlmcp.preferences.McpHttpServerPreferencePage"
+            class="eclipsectlmcp.preferences.mcp.McpServerPreferencePage">
+      </page>
+      <page
+            id="eclipsectlmcp.preferences.TmuxPreferencePage"
+            name="Editor Selection"
+            category="eclipsectlmcp.preferences.McpHttpServerPreferencePage"
+            class="eclipsectlmcp.preferences.tmux.TmuxPreferencePage">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            id="eclipsectl.commands.category"
+            name="EclipseCtl MCP"
+            description="Commands contributed by EclipseCtl MCP">
+      </category>
+      <command
+            categoryId="eclipsectl.commands.category"
+            id="eclipsectl.commands.sendSelectionToTmux"
+            name="Share Editor Selection"
+            description="Format the current editor selection and optionally copy it to the clipboard or send it to a WSL tmux session">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            commandId="eclipsectl.commands.sendSelectionToTmux"
+            class="eclipsectlmcp.handlers.SendSelectionToTmuxHandler">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="eclipsectl.commands.sendSelectionToTmux"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="org.eclipse.ui.textEditorScope"
+            sequence="F9">
+      </key>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer
+            class="eclipsectlmcp.preferences.PreferenceInitializer">
+      </initializer>
+   </extension>
+   <extension point="org.eclipse.ui.startup">
+       <startup class="eclipsectlmcp.PluginStartup"/>
+   </extension>
+
+</plugin>
