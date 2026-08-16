@@ -2,15 +2,12 @@ package eclipsectlmcp.mcp.services;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.ILog;
 import org.eclipse.core.runtime.Status;
@@ -20,15 +17,9 @@ import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.e4.core.di.annotations.Creatable;
-import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.IMethod;
-import org.eclipse.jdt.core.IPackageFragment;
-import org.eclipse.jdt.core.IPackageFragmentRoot;
-import org.eclipse.jdt.core.IType;
-import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 
+import eclipsectlmcp.mcp.services.JavaLaunchTargetResolver.LaunchTarget;
 import eclipsectlmcp.tools.UISynchronizeCallable;
 import jakarta.inject.Inject;
 
@@ -42,6 +33,18 @@ public class LaunchConfigurationService {
 	private static final String CONFLICT_GENERATE = "generate";
 	private static final String UPDATE_MERGE = "merge";
 	private static final String UPDATE_REPLACE = "replace";
+	private static final String JUNIT_LAUNCH_TYPE = "org.eclipse.jdt.junit.launchconfig";
+	private static final String JUNIT_TEST_KIND = "org.eclipse.jdt.junit.TEST_KIND";
+	private static final String JUNIT4_TEST_KIND = "org.eclipse.jdt.junit.loader.junit4";
+	private static final String JUNIT5_TEST_KIND = "org.eclipse.jdt.junit.loader.junit5";
+	private static final String TESTNG_LAUNCH_TYPE = "org.testng.eclipse.launchconfig";
+	private static final String TESTNG_REMOTE_MAIN = "org.testng.remote.RemoteTestNG";
+	private static final String TESTNG_CLASS_LIST = "org.testng.eclipse.CLASS_TEST_LIST";
+	private static final String TESTNG_ALL_CLASS_METHODS = "org.testng.eclipse.ALL_CLASS_METHODS";
+	private static final String TESTNG_TYPE = "org.testng.eclipse.TYPE";
+	private static final String TESTNG_LOG_LEVEL = "org.testng.eclipse.LOG_LEVEL";
+
+	private final JavaLaunchTargetResolver targetResolver = new JavaLaunchTargetResolver();
 
 	@Inject
 	private ILog logger;
@@ -56,12 +59,23 @@ public class LaunchConfigurationService {
 			String programArguments, String vmArguments, String workingDirectory,
 			Map<String, String> environmentVariables, Boolean appendSystemEnvironment,
 			String nameConflict) {
+		return createJavaLaunchConfiguration(mainClass, configName, projectName, programArguments, vmArguments,
+				workingDirectory, environmentVariables, appendSystemEnvironment, nameConflict, null);
+	}
+
+	/**
+	 * Creates a Java application, JUnit, or TestNG launch configuration.
+	 */
+	public String createJavaLaunchConfiguration(String className, String configName, String projectName,
+			String programArguments, String vmArguments, String workingDirectory,
+			Map<String, String> environmentVariables, Boolean appendSystemEnvironment,
+			String nameConflict, String configurationType) {
 		try {
-			return uiSync.syncCall(() -> createJavaLaunchConfigurationInternal(mainClass, configName, projectName,
+			return uiSync.syncCall(() -> createJavaLaunchConfigurationInternal(className, configName, projectName,
 					programArguments, vmArguments, workingDirectory, environmentVariables,
-					appendSystemEnvironment, nameConflict));
+					appendSystemEnvironment, nameConflict, configurationType));
 		} catch (Exception e) {
-			logger.log(Status.error("Error creating Java launch configuration", e));
+			logger.log(Status.error("Error creating launch configuration", e));
 			return "Error: " + errorMessage(e);
 		}
 	}
@@ -99,18 +113,27 @@ public class LaunchConfigurationService {
 		}
 	}
 
-	private String createJavaLaunchConfigurationInternal(String mainClass, String configName, String projectName,
+	private String createJavaLaunchConfigurationInternal(String className, String configName, String projectName,
 			String programArguments, String vmArguments, String workingDirectory,
 			Map<String, String> environmentVariables, Boolean appendSystemEnvironment,
-			String nameConflict) throws CoreException {
-		String requestedMainClass = requireText(mainClass, "mainClass");
-		MainTypeMatch mainType = resolveMainType(requestedMainClass, projectName);
+			String nameConflict, String configurationType) throws CoreException {
+		String requestedClass = requireText(className, "mainClass");
+		LaunchConfigurationKind requestedKind = LaunchConfigurationKind.parse(configurationType);
+		LaunchTarget target = targetResolver.resolve(requestedClass, projectName,
+				requestedKind == LaunchConfigurationKind.JAVA);
+		LaunchConfigurationKind effectiveKind = requestedKind == LaunchConfigurationKind.AUTO
+				? targetResolver.detectKind(target.type())
+				: requestedKind;
+		if (effectiveKind == LaunchConfigurationKind.JAVA && !targetResolver.hasMainMethod(target.type())) {
+			throw new IllegalArgumentException("Class '" + target.type().getFullyQualifiedName('.')
+					+ "' does not declare a runnable main method.");
+		}
 		validateEnvironmentVariables(environmentVariables);
 
 		ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
 		String conflictPolicy = normalizeChoice(nameConflict, CONFLICT_ERROR, CONFLICT_ERROR, CONFLICT_GENERATE);
 		boolean derivedName = isBlank(configName);
-		String requestedName = derivedName ? mainType.type().getElementName() : configName.trim();
+		String requestedName = derivedName ? target.type().getElementName() : configName.trim();
 		String effectiveName;
 
 		if (derivedName || CONFLICT_GENERATE.equals(conflictPolicy)) {
@@ -124,17 +147,16 @@ public class LaunchConfigurationService {
 			effectiveName = requestedName;
 		}
 
-		ILaunchConfigurationType type = launchManager
-				.getLaunchConfigurationType(IJavaLaunchConfigurationConstants.ID_JAVA_APPLICATION);
+		String launchTypeId = launchTypeId(effectiveKind);
+		ILaunchConfigurationType type = launchManager.getLaunchConfigurationType(launchTypeId);
 		if (type == null) {
-			return "Error: Java Application launch configuration type is not available.";
+			return unavailableTypeMessage(effectiveKind);
 		}
 
 		ILaunchConfigurationWorkingCopy workingCopy = type.newInstance(null, effectiveName);
 		workingCopy.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME,
-				mainType.project().getElementName());
-		workingCopy.setAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME,
-				mainType.type().getFullyQualifiedName('.'));
+				target.project().getElementName());
+		configureTarget(workingCopy, target, effectiveKind);
 		setOptionalAttribute(workingCopy, IJavaLaunchConfigurationConstants.ATTR_PROGRAM_ARGUMENTS,
 				programArguments);
 		setOptionalAttribute(workingCopy, IJavaLaunchConfigurationConstants.ATTR_VM_ARGUMENTS, vmArguments);
@@ -146,13 +168,18 @@ public class LaunchConfigurationService {
 		}
 		workingCopy.setAttribute(ILaunchManager.ATTR_APPEND_ENVIRONMENT_VARIABLES,
 				appendSystemEnvironment == null || appendSystemEnvironment);
-		workingCopy.setMappedResources(new IResource[] { mainType.project().getProject() });
+		workingCopy.setMappedResources(new IResource[] { target.project().getProject() });
 
 		ILaunchConfiguration saved = workingCopy.doSave();
 		StringBuilder result = new StringBuilder();
-		result.append("Created Java launch configuration '").append(saved.getName()).append("'.\n\n")
-				.append("- Project: ").append(mainType.project().getElementName()).append("\n")
-				.append("- Main class: ").append(mainType.type().getFullyQualifiedName('.')).append("\n")
+		result.append("Created ").append(effectiveKind.displayName()).append(" launch configuration '")
+				.append(saved.getName()).append("'.\n\n")
+				.append("- Type: ").append(effectiveKind.displayName());
+		if (requestedKind == LaunchConfigurationKind.AUTO) {
+			result.append(" (auto-detected)");
+		}
+		result.append("\n- Project: ").append(target.project().getElementName()).append("\n")
+				.append("- Target class: ").append(target.type().getFullyQualifiedName('.')).append("\n")
 				.append("- Environment variables: ")
 				.append(environmentVariables == null ? 0 : environmentVariables.size()).append("\n")
 				.append("- Append system environment: ")
@@ -161,6 +188,48 @@ public class LaunchConfigurationService {
 			result.append("\n- Requested name: ").append(requestedName);
 		}
 		return result.toString();
+	}
+
+	private String launchTypeId(LaunchConfigurationKind kind) {
+		return switch (kind) {
+			case JAVA -> IJavaLaunchConfigurationConstants.ID_JAVA_APPLICATION;
+			case JUNIT4, JUNIT5 -> JUNIT_LAUNCH_TYPE;
+			case TESTNG -> TESTNG_LAUNCH_TYPE;
+			case AUTO -> throw new IllegalArgumentException("Auto launch type was not resolved.");
+		};
+	}
+
+	private String unavailableTypeMessage(LaunchConfigurationKind kind) {
+		if (kind == LaunchConfigurationKind.TESTNG) {
+			return "Error: TestNG launch configuration type is not available. "
+					+ "Install the TestNG Eclipse plugin and restart Eclipse.";
+		}
+		return "Error: " + kind.displayName() + " launch configuration type is not available.";
+	}
+
+	private void configureTarget(ILaunchConfigurationWorkingCopy workingCopy, LaunchTarget target,
+			LaunchConfigurationKind kind) {
+		String qualifiedClassName = target.type().getFullyQualifiedName('.');
+		switch (kind) {
+			case JAVA -> workingCopy.setAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME,
+					qualifiedClassName);
+			case JUNIT4 -> {
+				workingCopy.setAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, qualifiedClassName);
+				workingCopy.setAttribute(JUNIT_TEST_KIND, JUNIT4_TEST_KIND);
+			}
+			case JUNIT5 -> {
+				workingCopy.setAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, qualifiedClassName);
+				workingCopy.setAttribute(JUNIT_TEST_KIND, JUNIT5_TEST_KIND);
+			}
+			case TESTNG -> {
+				workingCopy.setAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, TESTNG_REMOTE_MAIN);
+				workingCopy.setAttribute(TESTNG_CLASS_LIST, List.of(qualifiedClassName));
+				workingCopy.setAttribute(TESTNG_ALL_CLASS_METHODS, Map.of(qualifiedClassName, ""));
+				workingCopy.setAttribute(TESTNG_TYPE, 1);
+				workingCopy.setAttribute(TESTNG_LOG_LEVEL, "2");
+			}
+			case AUTO -> throw new IllegalArgumentException("Auto launch type was not resolved.");
+		}
 	}
 
 	private String updateLaunchEnvironmentInternal(String configName, Map<String, String> variables,
@@ -223,86 +292,6 @@ public class LaunchConfigurationService {
 				+ "- Variables removed: " + removed + "\n"
 				+ "- Configured variables: " + updated.size() + "\n"
 				+ "- Append system environment: " + append;
-	}
-
-	private MainTypeMatch resolveMainType(String mainClass, String projectName) throws CoreException {
-		String normalizedClass = mainClass.endsWith(".java")
-				? mainClass.substring(0, mainClass.length() - ".java".length())
-				: mainClass;
-		List<IJavaProject> projects = candidateProjects(projectName);
-		Map<String, MainTypeMatch> matches = new LinkedHashMap<>();
-		for (IJavaProject javaProject : projects) {
-			IType directMatch = javaProject.findType(normalizedClass);
-			if (directMatch != null && hasMainMethod(directMatch)) {
-				matches.put(directMatch.getHandleIdentifier(), new MainTypeMatch(javaProject, directMatch));
-			}
-			for (IPackageFragment fragment : javaProject.getPackageFragments()) {
-				if (fragment.getKind() != IPackageFragmentRoot.K_SOURCE) {
-					continue;
-				}
-				for (ICompilationUnit unit : fragment.getCompilationUnits()) {
-					for (IType type : unit.getAllTypes()) {
-						if (matchesTypeName(type, normalizedClass) && hasMainMethod(type)) {
-							matches.put(type.getHandleIdentifier(), new MainTypeMatch(javaProject, type));
-						}
-					}
-				}
-			}
-		}
-
-		if (matches.isEmpty()) {
-			String scope = isBlank(projectName) ? "the workspace" : "project '" + projectName.trim() + "'";
-			throw new IllegalArgumentException("No runnable main class '" + mainClass + "' found in " + scope + ".");
-		}
-		if (matches.size() > 1) {
-			List<MainTypeMatch> sortedMatches = new ArrayList<>(matches.values());
-			sortedMatches.sort(Comparator.comparing((MainTypeMatch match) -> match.type().getFullyQualifiedName('.'))
-					.thenComparing(match -> match.project().getElementName()));
-			StringBuilder message = new StringBuilder("Main class '").append(mainClass)
-					.append("' is ambiguous. Matching runnable classes:\n");
-			for (MainTypeMatch match : sortedMatches) {
-				message.append("- ").append(match.type().getFullyQualifiedName('.'))
-						.append(" (project: ").append(match.project().getElementName()).append(")\n");
-			}
-			message.append("Specify projectName or a fully qualified mainClass.");
-			throw new IllegalArgumentException(message.toString());
-		}
-		return matches.values().iterator().next();
-	}
-
-	private List<IJavaProject> candidateProjects(String projectName) throws CoreException {
-		if (!isBlank(projectName)) {
-			IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName.trim());
-			if (!project.isAccessible()) {
-				throw new IllegalArgumentException("Project '" + projectName.trim() + "' does not exist or is closed.");
-			}
-			if (!project.hasNature(JavaCore.NATURE_ID)) {
-				throw new IllegalArgumentException("Project '" + projectName.trim() + "' is not a Java project.");
-			}
-			return List.of(JavaCore.create(project));
-		}
-
-		List<IJavaProject> projects = new ArrayList<>();
-		for (IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
-			if (project.isAccessible() && project.hasNature(JavaCore.NATURE_ID)) {
-				projects.add(JavaCore.create(project));
-			}
-		}
-		return projects;
-	}
-
-	private boolean matchesTypeName(IType type, String requestedName) {
-		return requestedName.equals(type.getElementName())
-				|| requestedName.equals(type.getFullyQualifiedName('.'));
-	}
-
-	private boolean hasMainMethod(IType type) throws CoreException {
-		for (IMethod method : type.getMethods()) {
-			if (method.isMainMethod()) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private ILaunchConfiguration findConfiguration(String configName) throws CoreException {
@@ -444,6 +433,4 @@ public class LaunchConfigurationService {
 		return cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage();
 	}
 
-	private record MainTypeMatch(IJavaProject project, IType type) {
-	}
 }

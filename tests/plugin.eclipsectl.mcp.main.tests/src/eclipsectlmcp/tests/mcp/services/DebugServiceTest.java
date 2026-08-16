@@ -320,6 +320,67 @@ public class DebugServiceTest {
 	}
 
 	@Test
+	public void testCreateJUnit5LaunchConfigurationExplicitly() throws CoreException {
+		String result = service.createJavaLaunchConfiguration(
+				"com.ExampleTest", "CreatedJUnit5", TEST_PROJECT_NAME,
+				null, "-Xmx256m", null, null, null, "error", "junit5");
+
+		assertTrue(result.contains("Created JUnit 5 launch configuration 'CreatedJUnit5'"),
+				"Unexpected: " + result);
+		ILaunchConfiguration config = findLaunchConfiguration("CreatedJUnit5");
+		assertNotNull(config);
+		assertEquals("org.eclipse.jdt.junit.launchconfig", config.getType().getIdentifier());
+		assertEquals("org.eclipse.jdt.junit.loader.junit5",
+				config.getAttribute("org.eclipse.jdt.junit.TEST_KIND", ""));
+		assertEquals("com.ExampleTest",
+				config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, ""));
+	}
+
+	@Test
+	public void testCreateLaunchConfigurationWithAutoDetectedJUnit5() throws CoreException {
+		String result = service.createJavaLaunchConfiguration(
+				"com.ExampleTest", "AutoJUnit5", TEST_PROJECT_NAME,
+				null, null, null, null, null, "error", "auto");
+
+		assertTrue(result.contains("Type: JUnit 5 (auto-detected)"), "Unexpected: " + result);
+		ILaunchConfiguration config = findLaunchConfiguration("AutoJUnit5");
+		assertNotNull(config);
+		assertEquals("org.eclipse.jdt.junit.loader.junit5",
+				config.getAttribute("org.eclipse.jdt.junit.TEST_KIND", ""));
+	}
+
+	@Test
+	public void testCreateTestNgLaunchConfigurationOrReportsMissingPlugin() throws CoreException {
+		ILaunchConfigurationType testNgType = DebugPlugin.getDefault().getLaunchManager()
+				.getLaunchConfigurationType("org.testng.eclipse.launchconfig");
+		String result = service.createJavaLaunchConfiguration(
+				"com.ExampleTest", "CreatedTestNG", TEST_PROJECT_NAME,
+				null, null, null, null, null, "error", "testng");
+
+		if (testNgType == null) {
+			assertTrue(result.contains("Install the TestNG Eclipse plugin"), "Unexpected: " + result);
+			return;
+		}
+		assertTrue(result.contains("Created TestNG launch configuration 'CreatedTestNG'"),
+				"Unexpected: " + result);
+		ILaunchConfiguration config = findLaunchConfiguration("CreatedTestNG");
+		assertNotNull(config);
+		assertEquals(List.of("com.ExampleTest"),
+				config.getAttribute("org.testng.eclipse.CLASS_TEST_LIST", List.of()));
+		assertEquals(1, config.getAttribute("org.testng.eclipse.TYPE", 0));
+	}
+
+	@Test
+	public void testRejectsInvalidLaunchConfigurationType() {
+		String result = service.createJavaLaunchConfiguration(
+				"com.MainHelloWorld", "InvalidType", TEST_PROJECT_NAME,
+				null, null, null, null, null, "error", "spock");
+
+		assertTrue(result.contains("Expected: java, junit4, junit5, testng, or auto"),
+				"Unexpected: " + result);
+	}
+
+	@Test
 	public void testGetLaunchConfigurationMasksEnvironmentValues() {
 		service.updateLaunchEnvironment("MainHelloWorld", Map.of("API_TOKEN", "secret-value"),
 				null, null, null);
@@ -769,6 +830,15 @@ public class DebugServiceTest {
 				+ "    }\n"
 				+ "}\n";
 		createFile("src/com/MainHelloWorld.java", mainContent);
+
+		String junit5Content = "package com;\n\n"
+				+ "import org.junit.jupiter.api.Test;\n\n"
+				+ "public class ExampleTest {\n"
+				+ "    @Test\n"
+				+ "    void example() {\n"
+				+ "    }\n"
+				+ "}\n";
+		createFile("src/com/ExampleTest.java", junit5Content);
 	}
 
 	private void createLaunchConfiguration() throws CoreException {

@@ -151,21 +151,30 @@ public class EclipseDebugMcpServer {
 
 	@Tool(
 		name = "createJavaLaunchConfiguration",
-		description = "Create a local Java Application launch configuration. Resolves the project automatically when the runnable main class is unique in the workspace. Existing names are rejected by default."
+		description = "Create a local Java Application, JUnit 4, JUnit 5, or TestNG launch configuration. The type can be explicit or auto-detected from resolved test annotations/imports. Existing names are rejected by default."
 	)
 	public String createJavaLaunchConfiguration(
-			@ToolParam(name = "mainClass", description = "Runnable Java main class. Prefer a fully qualified name such as 'com.example.Application'.", required = true) String mainClass,
-			@ToolParam(name = "configName", description = "Configuration name. Defaults to the main class simple name.", required = false) String configName,
-			@ToolParam(name = "projectName", description = "Optional Java project name. Inferred when the main class has exactly one workspace match.", required = false) String projectName,
+			@ToolParam(name = "mainClass", description = "Target Java class. For type='java' it must declare a main method; for test types it is the test class. Prefer a fully qualified name.", required = true) String mainClass,
+			@ToolParam(name = "configName", description = "Configuration name. Defaults to the target class simple name.", required = false) String configName,
+			@ToolParam(name = "projectName", description = "Optional Java project name. Inferred when the target class has exactly one workspace match.", required = false) String projectName,
 			@ToolParam(name = "programArguments", description = "Optional program arguments exactly as they should appear on the command line.", required = false) String programArguments,
 			@ToolParam(name = "vmArguments", description = "Optional JVM arguments exactly as they should appear on the command line.", required = false) String vmArguments,
 			@ToolParam(name = "workingDirectory", description = "Optional absolute or workspace-relative working directory. Defaults to the project directory.", required = false) String workingDirectory,
 			@ToolParam(name = "environmentVariables", description = "Optional object mapping environment variable names to string values.", required = false, type = "object") Map<String, String> environmentVariables,
 			@ToolParam(name = "appendSystemEnvironment", description = "Whether configured variables are appended to the native environment. Default: true.", required = false, type = "boolean") Boolean appendSystemEnvironment,
-			@ToolParam(name = "nameConflict", description = "Name collision policy: 'error' (default) or 'generate' to let Eclipse create a unique suffixed name.", required = false) String nameConflict) {
+			@ToolParam(name = "nameConflict", description = "Name collision policy: 'error' (default) or 'generate' to let Eclipse create a unique suffixed name.", required = false) String nameConflict,
+			@ToolParam(name = "type", description = "Launch type: 'java' (default), 'junit4', 'junit5', 'testng', or 'auto'. Auto uses resolved annotations/imports and falls back to a main method.", required = false) String configurationType) {
 		return launchConfigurationService.createJavaLaunchConfiguration(mainClass, configName, projectName,
 				programArguments, vmArguments, workingDirectory, environmentVariables,
-				appendSystemEnvironment, nameConflict);
+				appendSystemEnvironment, nameConflict, configurationType);
+	}
+
+	public String createJavaLaunchConfiguration(String mainClass, String configName, String projectName,
+			String programArguments, String vmArguments, String workingDirectory,
+			Map<String, String> environmentVariables, Boolean appendSystemEnvironment,
+			String nameConflict) {
+		return createJavaLaunchConfiguration(mainClass, configName, projectName, programArguments, vmArguments,
+				workingDirectory, environmentVariables, appendSystemEnvironment, nameConflict, null);
 	}
 
 	@Tool(

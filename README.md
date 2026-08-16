@@ -15,7 +15,7 @@ EclipseCtl MCP exposes **85 MCP tools** across 7 main servers, allowing AI assis
 - **Code Generation**: Generate getters/setters, toString/equals/hashCode, implement interfaces
 - **Refactoring**: Rename types/packages, move classes, extract methods
 - **Testing**: Run JUnit tests (all, package, class, or specific methods), find test classes
-- **Debugging**: Create and inspect Java launch configurations, manage launch environments and breakpoints, control debug sessions, inspect variables, evaluate expressions
+- **Debugging**: Create and inspect Java, JUnit 4/5, and TestNG launch configurations, manage launch environments and breakpoints, control debug sessions, inspect variables, evaluate expressions
 - **Code Coverage**: Launch tests with coverage analysis, get coverage reports (requires EclEmma)
 - **Maven**: Run Maven builds, get effective POM, list dependencies
 - **Source Operations**: Organize imports, format code
@@ -44,7 +44,7 @@ Rename files/types/packages, move types/resources, extract methods
 Organize imports, format code
 
 #### eclipse-debug (23 tools)
-Breakpoint management, thread/process management, debug session control, runtime inspection, and Java launch configuration creation, inspection, and environment updates
+Breakpoint management, thread/process management, debug session control, runtime inspection, and Java/JUnit/TestNG launch configuration creation, inspection, and environment updates. `createJavaLaunchConfiguration` accepts `type=java|junit4|junit5|testng|auto`; the default remains `java`, and TestNG requires the TestNG Eclipse plugin.
 
 #### eclipse-coverage (3 tools)
 Coverage analysis with EclEmma (requires EclEmma plugin)
@@ -57,7 +57,7 @@ Coverage analysis with EclEmma (requires EclEmma plugin)
 2. Click *Add* button
 3. Enter:
    - Name: `EclipseCtl MCP`
-   - Location: `[Your update site URL]`
+   - Location: `https://jrame.github.io/eclipsectl-mcp-plugin/`
 4. Click *Add*
 5. Select "EclipseCtl MCP" from the plugin list
 6. Click *Next* and follow the installation wizard
@@ -70,7 +70,7 @@ Coverage analysis with EclEmma (requires EclEmma plugin)
 
 1. Clone the repository:
    ```bash
-   git clone [repository URL]
+   git clone https://github.com/jrame/eclipsectl-mcp-plugin.git
    cd eclipsectl-mcp-plugin
    ```
 
