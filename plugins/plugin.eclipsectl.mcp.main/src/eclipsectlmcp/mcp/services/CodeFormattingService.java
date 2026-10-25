@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -244,7 +246,7 @@ public class CodeFormattingService extends CodeEditingServiceBase {
 
     public String formatCode(String code, String projectName) {
         if (code == null || code.isEmpty()) {
-            return "Error: Code parameter cannot be null or empty.";
+            return ToolExecution.error("Error: Code parameter cannot be null or empty.");
         }
         try {
             Map<String, String> options;

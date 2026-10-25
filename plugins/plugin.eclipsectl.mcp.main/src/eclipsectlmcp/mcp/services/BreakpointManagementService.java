@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IResource;
@@ -37,7 +39,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 				// Resolve file
 				IFile file = ResourceUtilities.findFile(projectName, filePath);
 				if (file == null || !file.exists()) {
-					return "Error: File not found: " + filePath;
+					return ToolExecution.error("Error: File not found: " + filePath);
 				}
 
 				IResource resource = file;
@@ -95,7 +97,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error adding breakpoint", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -113,7 +115,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 				// Resolve file
 				IFile file = ResourceUtilities.findFile(projectName, filePath);
 				if (file == null || !file.exists()) {
-					return "Error: File not found: " + filePath;
+					return ToolExecution.error("Error: File not found: " + filePath);
 				}
 
 				IResource resource = file;
@@ -138,7 +140,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 				}
 
 				if (targetBreakpoint == null) {
-					return "Error: No breakpoint found at " + file.getName() + ":" + lineNumber;
+					return ToolExecution.error("Error: No breakpoint found at " + file.getName() + ":" + lineNumber);
 				}
 
 				// Delete breakpoint
@@ -148,7 +150,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error removing breakpoint", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -207,7 +209,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error listing breakpoints", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -225,7 +227,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 				// Resolve file
 				IFile file = ResourceUtilities.findFile(projectName, filePath);
 				if (file == null || !file.exists()) {
-					return "Error: File not found: " + filePath;
+					return ToolExecution.error("Error: File not found: " + filePath);
 				}
 
 				IResource resource = file;
@@ -250,7 +252,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 				}
 
 				if (targetBreakpoint == null) {
-					return "Error: No breakpoint found at " + file.getName() + ":" + lineNumber;
+					return ToolExecution.error("Error: No breakpoint found at " + file.getName() + ":" + lineNumber);
 				}
 
 				// Enable breakpoint
@@ -260,7 +262,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error enabling breakpoint", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -278,7 +280,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 				// Resolve file
 				IFile file = ResourceUtilities.findFile(projectName, filePath);
 				if (file == null || !file.exists()) {
-					return "Error: File not found: " + filePath;
+					return ToolExecution.error("Error: File not found: " + filePath);
 				}
 
 				IResource resource = file;
@@ -303,7 +305,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 				}
 
 				if (targetBreakpoint == null) {
-					return "Error: No breakpoint found at " + file.getName() + ":" + lineNumber;
+					return ToolExecution.error("Error: No breakpoint found at " + file.getName() + ":" + lineNumber);
 				}
 
 				// Disable breakpoint
@@ -313,7 +315,7 @@ public class BreakpointManagementService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error disabling breakpoint", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 }

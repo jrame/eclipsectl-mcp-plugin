@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -62,28 +64,28 @@ public class CodeGenerationService {
         Objects.requireNonNull(filePath);
 
         if (filePath.isEmpty()) {
-            return "Error: File path cannot be empty.";
+            return ToolExecution.error("Error: File path cannot be empty.");
         }
 
         if (!generateGetters && !generateSetters) {
-            return "Error: Must generate at least getters or setters.";
+            return ToolExecution.error("Error: Must generate at least getters or setters.");
         }
 
         try {
             // Find the file
             IFile file = ResourceUtilities.findFile(projectName, filePath);
             if (file == null || !file.exists()) {
-                return "Error: File not found: " + filePath;
+                return ToolExecution.error("Error: File not found: " + filePath);
             }
 
             if (!filePath.endsWith(".java")) {
-                return "Error: File must be a Java file: " + filePath;
+                return ToolExecution.error("Error: File must be a Java file: " + filePath);
             }
 
             // Get compilation unit
             IJavaElement javaElement = JavaCore.create(file);
             if (!(javaElement instanceof ICompilationUnit)) {
-                return "Error: Could not resolve Java compilation unit for file: " + filePath;
+                return ToolExecution.error("Error: Could not resolve Java compilation unit for file: " + filePath);
             }
 
             ICompilationUnit compilationUnit = (ICompilationUnit) javaElement;
@@ -91,7 +93,7 @@ public class CodeGenerationService {
             // Find the type
             IType type = findType(compilationUnit, className);
             if (type == null) {
-                return "Error: Could not find class" + (className != null ? " '" + className + "'" : "") + " in file: " + filePath;
+                return ToolExecution.error("Error: Could not find class" + (className != null ? " '" + className + "'" : "") + " in file: " + filePath);
             }
 
             // Get fields
@@ -103,7 +105,7 @@ public class CodeGenerationService {
             // Filter fields if specific names provided
             IField[] fields = filterFields(allFields, fieldNames);
             if (fields.length == 0) {
-                return "Error: No matching fields found. Available fields: " + Arrays.toString(Arrays.stream(allFields).map(IField::getElementName).toArray());
+                return ToolExecution.error("Error: No matching fields found. Available fields: " + Arrays.toString(Arrays.stream(allFields).map(IField::getElementName).toArray()));
             }
 
             // Generate methods
@@ -154,7 +156,7 @@ public class CodeGenerationService {
 
         } catch (Exception e) {
             logger.error("Error generating getters/setters", e);
-            return "Error generating getters/setters: " + e.getMessage();
+            return ToolExecution.error("Error generating getters/setters: " + e.getMessage());
         }
     }
 
@@ -352,28 +354,28 @@ public class CodeGenerationService {
         Objects.requireNonNull(filePath);
 
         if (filePath.isEmpty()) {
-            return "Error: File path cannot be empty.";
+            return ToolExecution.error("Error: File path cannot be empty.");
         }
 
         if (!generateToString && !generateEquals && !generateHashCode) {
-            return "Error: Must generate at least one method (toString, equals, or hashCode).";
+            return ToolExecution.error("Error: Must generate at least one method (toString, equals, or hashCode).");
         }
 
         try {
             // Find the file
             IFile file = ResourceUtilities.findFile(projectName, filePath);
             if (file == null || !file.exists()) {
-                return "Error: File not found: " + filePath;
+                return ToolExecution.error("Error: File not found: " + filePath);
             }
 
             if (!filePath.endsWith(".java")) {
-                return "Error: File must be a Java file: " + filePath;
+                return ToolExecution.error("Error: File must be a Java file: " + filePath);
             }
 
             // Get compilation unit
             IJavaElement javaElement = JavaCore.create(file);
             if (!(javaElement instanceof ICompilationUnit)) {
-                return "Error: Could not resolve Java compilation unit for file: " + filePath;
+                return ToolExecution.error("Error: Could not resolve Java compilation unit for file: " + filePath);
             }
 
             ICompilationUnit compilationUnit = (ICompilationUnit) javaElement;
@@ -381,7 +383,7 @@ public class CodeGenerationService {
             // Find the type
             IType type = findType(compilationUnit, className);
             if (type == null) {
-                return "Error: Could not find class" + (className != null ? " '" + className + "'" : "") + " in file: " + filePath;
+                return ToolExecution.error("Error: Could not find class" + (className != null ? " '" + className + "'" : "") + " in file: " + filePath);
             }
 
             // Get fields
@@ -393,7 +395,7 @@ public class CodeGenerationService {
             // Filter fields if specific names provided
             IField[] fields = filterFields(allFields, fieldNames);
             if (fields.length == 0) {
-                return "Error: No matching fields found. Available fields: " + Arrays.toString(Arrays.stream(allFields).map(IField::getElementName).toArray());
+                return ToolExecution.error("Error: No matching fields found. Available fields: " + Arrays.toString(Arrays.stream(allFields).map(IField::getElementName).toArray()));
             }
 
             // Generate methods
@@ -452,7 +454,7 @@ public class CodeGenerationService {
 
         } catch (Exception e) {
             logger.error("Error generating toString/equals/hashCode", e);
-            return "Error generating toString/equals/hashCode: " + e.getMessage();
+            return ToolExecution.error("Error generating toString/equals/hashCode: " + e.getMessage());
         }
     }
 
@@ -470,24 +472,24 @@ public class CodeGenerationService {
         Objects.requireNonNull(filePath);
 
         if (filePath.isEmpty()) {
-            return "Error: File path cannot be empty.";
+            return ToolExecution.error("Error: File path cannot be empty.");
         }
 
         try {
             // Find the file
             IFile file = ResourceUtilities.findFile(projectName, filePath);
             if (file == null || !file.exists()) {
-                return "Error: File not found: " + filePath;
+                return ToolExecution.error("Error: File not found: " + filePath);
             }
 
             if (!filePath.endsWith(".java")) {
-                return "Error: File must be a Java file: " + filePath;
+                return ToolExecution.error("Error: File must be a Java file: " + filePath);
             }
 
             // Get compilation unit
             IJavaElement javaElement = JavaCore.create(file);
             if (!(javaElement instanceof ICompilationUnit)) {
-                return "Error: Could not resolve Java compilation unit for file: " + filePath;
+                return ToolExecution.error("Error: Could not resolve Java compilation unit for file: " + filePath);
             }
 
             ICompilationUnit compilationUnit = (ICompilationUnit) javaElement;
@@ -495,7 +497,7 @@ public class CodeGenerationService {
             // Find the type
             IType type = findType(compilationUnit, className);
             if (type == null) {
-                return "Error: Could not find class" + (className != null ? " '" + className + "'" : "") + " in file: " + filePath;
+                return ToolExecution.error("Error: Could not find class" + (className != null ? " '" + className + "'" : "") + " in file: " + filePath);
             }
 
             // Get unimplemented methods
@@ -505,7 +507,7 @@ public class CodeGenerationService {
                 if (methodNames == null || methodNames.isEmpty()) {
                     return "No unimplemented methods found in class '" + type.getElementName() + "'.";
                 } else {
-                    return "Error: No matching unimplemented methods found for: " + String.join(", ", methodNames);
+                    return ToolExecution.error("Error: No matching unimplemented methods found for: " + String.join(", ", methodNames));
                 }
             }
 
@@ -534,7 +536,7 @@ public class CodeGenerationService {
 
         } catch (Exception e) {
             logger.error("Error implementing/overriding methods", e);
-            return "Error implementing/overriding methods: " + e.getMessage();
+            return ToolExecution.error("Error implementing/overriding methods: " + e.getMessage());
         }
     }
 

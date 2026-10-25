@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +95,7 @@ public class DebugContextService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error getting debug status", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -108,7 +110,7 @@ public class DebugContextService extends DebugServiceBase {
 			return uiSync.syncCall(() -> {
 				IDebugTarget debugTarget = getActiveDebugTarget(sessionName);
 				if (debugTarget == null) {
-					return "Error: No active debug session. Please launch a debug configuration first.";
+					return ToolExecution.error("Error: No active debug session. Please launch a debug configuration first.");
 				}
 
 				IThread[] threads = debugTarget.getThreads();
@@ -156,7 +158,7 @@ public class DebugContextService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error listing threads", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -179,7 +181,7 @@ public class DebugContextService extends DebugServiceBase {
 
 				IDebugTarget debugTarget = getActiveDebugTarget(sessionName);
 				if (debugTarget == null) {
-					return "Error: No active debug session. Please launch a debug configuration first.";
+					return ToolExecution.error("Error: No active debug session. Please launch a debug configuration first.");
 				}
 
 				// Validate the thread exists
@@ -200,7 +202,7 @@ public class DebugContextService extends DebugServiceBase {
 						if (available.length() > 0) available.append(", ");
 						available.append(thread.getName());
 					}
-					return "Error: Thread '" + threadName + "' not found. Available threads: " + available;
+					return ToolExecution.error("Error: Thread '" + threadName + "' not found. Available threads: " + available);
 				}
 
 				focusedThreadName = threadName;
@@ -213,7 +215,7 @@ public class DebugContextService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error selecting thread", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -295,7 +297,7 @@ public class DebugContextService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error listing processes", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 }

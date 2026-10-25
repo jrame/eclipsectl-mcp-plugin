@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +48,6 @@ public class ProjectListingService {
             final String JAVA_NATURE = JavaCore.NATURE_ID; // "org.eclipse.jdt.core.javanature"
             final String CPP_NATURE = "org.eclipse.cdt.core.cnature";
             final String CPP_CC_NATURE = "org.eclipse.cdt.core.ccnature";
-            final String PYTHON_NATURE = "org.python.pydev.pythonNature";
             final String JS_NATURE = "org.eclipse.wst.jsdt.core.jsNature";
             final String PHP_NATURE = "org.eclipse.php.core.PHPNature";
             final String WEB_NATURE = "org.eclipse.wst.common.project.facet.core.nature";
@@ -78,11 +79,6 @@ public class ProjectListingService {
                         }
                         if (project.hasNature(CPP_CC_NATURE)) {
                             detectedNatures.add("C++");
-                        }
-
-                        // Check for Python nature
-                        if (project.hasNature(PYTHON_NATURE)) {
-                            detectedNatures.add("Python");
                         }
 
                         // Check for JavaScript nature
@@ -121,7 +117,7 @@ public class ProjectListingService {
                             }
                         }
                     } catch (CoreException e) {
-                        result.append(" - Error determining project nature");
+                        result.append(ToolExecution.error(" - Error determining project nature"));
                         logger.error(e.getMessage(), e);
                     }
                 }
@@ -130,7 +126,7 @@ public class ProjectListingService {
             }
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            return "Error retrieving projects: " + e.getMessage();
+            return ToolExecution.error("Error retrieving projects: " + e.getMessage());
         }
 
         return result.toString();
@@ -186,7 +182,7 @@ public class ProjectListingService {
 
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            return "Error retrieving workspace info: " + e.getMessage();
+            return ToolExecution.error("Error retrieving workspace info: " + e.getMessage());
         }
 
         return result.toString();

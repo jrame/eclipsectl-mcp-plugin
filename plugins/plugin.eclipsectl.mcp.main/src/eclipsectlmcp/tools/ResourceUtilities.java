@@ -330,7 +330,6 @@ public class ResourceUtilities
         return switch (lang)
         {
             case "java" -> suggestedJavaFile(codeBlock);
-            case "python" -> "new_script.py";
             case "javascript" -> "script.js";
             case "typescript" -> "script.ts";
             case "html" -> "index.html";
@@ -417,7 +416,6 @@ public class ResourceUtilities
         return switch (lang)
         {
             case "java" -> suggestedJavaPath(project).append(suggestedJavaPackage(codeBlock));
-            case "python" -> suggestedPythonPath(project);
             case "javascript", "typescript", "html", "css" -> suggestedWebPath(project);
             default -> project.getFullPath();
         };
@@ -448,18 +446,6 @@ public class ResourceUtilities
         }
     }
 
-    public static IPath suggestedPythonPath(IProject project)
-    {
-        if (project.getFolder("src").exists())
-        {
-            return project.getFolder("src").getFullPath();
-        }
-        else
-        {
-            return project.getFullPath();
-        }
-    }
-
     public static IPath suggestedJavaPath(IProject project)
     {
         // Try to find src/main/java or src folder
@@ -483,7 +469,6 @@ public class ResourceUtilities
         return switch (lang)
         {
             case "java" -> "java";
-            case "python" -> "py";
             case "javascript" -> "js";
             case "typescript" -> "ts";
             case "html" -> "html";
@@ -565,7 +550,6 @@ public class ResourceUtilities
         return switch (mimeType)
         {
             case String s when s.contains("java") -> "java";
-            case String s when s.contains("python") -> "python";
             case String s when s.contains("javascript") -> "javascript";
             case String s when s.contains("html") -> "html";
             case String s when s.contains("xml") -> "xml";
@@ -589,7 +573,6 @@ public class ResourceUtilities
         return switch (Optional.ofNullable(fileExtension).map(String::toLowerCase).orElse(""))
         {
             case "java" -> "java";
-            case "py" -> "python";
             case "js" -> "javascript";
             case "ts" -> "typescript";
             case "html" -> "html";

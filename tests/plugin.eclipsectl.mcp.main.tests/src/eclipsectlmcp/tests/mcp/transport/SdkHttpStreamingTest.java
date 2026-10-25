@@ -35,6 +35,7 @@ import io.modelcontextprotocol.server.McpSyncServer;
 import io.modelcontextprotocol.server.transport.HttpServletStreamableServerTransportProvider;
 import io.modelcontextprotocol.spec.McpSchema;
 import jakarta.servlet.Servlet;
+import eclipsectlmcp.mcp.http.HttpMcpServletConfiguration;
 
 /**
  * Quick test with Claude Code:
@@ -417,30 +418,10 @@ public class SdkHttpStreamingTest
 
         Context context = tomcat.addContext(contextPath, baseDir);
 
-        // Add authentication filter if enabled
         if (useAuth) {
-            var authFilter = new BearerTokenAuthenticationFilter(BEARER_TOKEN);
-            var filterDef = new org.apache.tomcat.util.descriptor.web.FilterDef();
-            filterDef.setFilterName("authFilter");
-            filterDef.setFilter(authFilter);
-            context.addFilterDef(filterDef);
-
-            var filterMap = new org.apache.tomcat.util.descriptor.web.FilterMap();
-            filterMap.setFilterName("authFilter");
-            filterMap.addURLPattern("/*");
-            context.addFilterMap(filterMap);
-
-            logger.info("Bearer token authentication enabled");
+            HttpMcpServletConfiguration.configureAuthentication(context, BEARER_TOKEN);
         }
-
-        // Add transport servlet to Tomcat
-        org.apache.catalina.Wrapper wrapper = context.createWrapper();
-        wrapper.setName("mcpServlet");
-        wrapper.setServlet(servlet);
-        wrapper.setLoadOnStartup(1);
-        wrapper.setAsyncSupported(true);
-        context.addChild(wrapper);
-        context.addServletMappingDecoded("/*", "mcpServlet");
+        HttpMcpServletConfiguration.addServlet(context, "calculator", servlet);
 
         var connector = tomcat.getConnector();
         connector.setAsyncTimeout(3000);

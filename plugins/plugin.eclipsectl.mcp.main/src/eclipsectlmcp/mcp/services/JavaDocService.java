@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -50,7 +52,7 @@ public class JavaDocService {
      */
     public String getJavaDoc(String fullyQualifiedClassName) {
         if (fullyQualifiedClassName == null || fullyQualifiedClassName.isEmpty()) {
-            return "Error: Fully qualified class name cannot be null or empty.";
+            return ToolExecution.error("Error: Fully qualified class name cannot be null or empty.");
         }
         return getAvailableJavaProjects().stream()
                 .map(project -> getAttachedJavadoc(fullyQualifiedClassName, project))
@@ -70,7 +72,7 @@ public class JavaDocService {
      */
     public String getSource(String fullyQualifiedClassName) {
         if (fullyQualifiedClassName == null || fullyQualifiedClassName.isEmpty()) {
-            return "Error: Fully qualified class name cannot be null or empty.";
+            return ToolExecution.error("Error: Fully qualified class name cannot be null or empty.");
         }
         return getAvailableJavaProjects().stream()
                 .map(project -> getAttachedSource(fullyQualifiedClassName, project))

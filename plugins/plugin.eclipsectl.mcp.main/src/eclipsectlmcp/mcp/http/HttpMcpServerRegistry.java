@@ -3,7 +3,6 @@ package eclipsectlmcp.mcp.http;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.catalina.Context;
@@ -89,6 +88,7 @@ public class HttpMcpServerRegistry
 
             String baseDir = System.getProperty("java.io.tmpdir");
             Context context = tomcat.addContext("", baseDir);  // Create context once
+            HttpMcpServletConfiguration.configureAuthentication(context, httpServerPreferncesProvider.get().token());
 
             var builtin = mcpServerRepository.listBuiltInServers();
             var stored  = mcpServerRepository.listStoredServers();
@@ -134,14 +134,7 @@ public class HttpMcpServerRegistry
     
     private void addServlet(Context context, String serverName, Servlet servlet)
     {
-        // Add transport servlet to the shared context
-        var wrapper = context.createWrapper();
-        wrapper.setName("mcpServlet_" + serverName);  // Unique name per server
-        wrapper.setServlet(servlet);
-        wrapper.setLoadOnStartup(1);
-        wrapper.setAsyncSupported(true);
-        context.addChild(wrapper);
-        context.addServletMappingDecoded("/mcp/" + serverName + "/*", "mcpServlet_" + serverName);
+        HttpMcpServletConfiguration.addServlet(context, serverName, servlet);
 
         // Track the endpoint
         endpoints.add(serverName);

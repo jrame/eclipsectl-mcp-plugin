@@ -32,7 +32,7 @@ public class EclipseCoverageMcpServer {
 	)
 	public String runCoverage(
 			@ToolParam(name = "configName", description = "Name of the launch configuration to run with coverage", required = true) String configName,
-			@ToolParam(name = "waitForCompletion", description = "If true, waits for the process to terminate (max 120s). Default: false", required = false) Boolean waitForCompletion) {
+			@ToolParam(name = "waitForCompletion", description = "If true, waits for the process to terminate (max 120s). Default: false", required = false, type = "boolean") Boolean waitForCompletion) {
 		return coverageService.runCoverage(configName, waitForCompletion != null && waitForCompletion);
 	}
 

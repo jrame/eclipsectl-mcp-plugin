@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,16 +40,16 @@ public class ProjectImportService {
      */
     public String importProject(String projectPath, String projectName) {
         if (projectPath == null || projectPath.trim().isEmpty()) {
-            return "Error: Project path cannot be null or empty.";
+            return ToolExecution.error("Error: Project path cannot be null or empty.");
         }
 
         File projectDir = new File(projectPath);
         if (!projectDir.exists()) {
-            return "Error: Directory '" + projectPath + "' does not exist.";
+            return ToolExecution.error("Error: Directory '" + projectPath + "' does not exist.");
         }
 
         if (!projectDir.isDirectory()) {
-            return "Error: '" + projectPath + "' is not a directory.";
+            return ToolExecution.error("Error: '" + projectPath + "' is not a directory.");
         }
 
         try {
@@ -62,8 +64,8 @@ public class ProjectImportService {
             // Check if project already exists
             IProject existingProject = ResourcesPlugin.getWorkspace().getRoot().getProject(finalProjectName);
             if (existingProject.exists()) {
-                return "Error: Project '" + finalProjectName + "' already exists in workspace. " +
-                       "Please choose a different name or remove the existing project first.";
+                return ToolExecution.error("Error: Project '" + finalProjectName + "' already exists in workspace. " +
+                       "Please choose a different name or remove the existing project first.");
             }
 
             // Check for .project file (Eclipse project)
@@ -77,7 +79,7 @@ public class ProjectImportService {
 
         } catch (Exception e) {
             logger.error("Error importing project: " + e.getMessage(), e);
-            return "Error importing project: " + e.getMessage();
+            return ToolExecution.error("Error importing project: " + e.getMessage());
         }
     }
 
@@ -210,9 +212,6 @@ public class ProjectImportService {
                         break;
                     case "org.eclipse.buildship.core.gradleprojectnature":
                         types.add("Gradle");
-                        break;
-                    case "org.python.pydev.pythonNature":
-                        types.add("Python");
                         break;
                     case "org.eclipse.cdt.core.cnature":
                         types.add("C");

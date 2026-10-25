@@ -44,6 +44,17 @@ import eclipsectlmcp.mcp.services.SearchService.SearchResult;
  */
 public class SearchServiceTest
 {
+    @Test
+    public void searchReportsActualWindowsAndMixedLineOffsets() throws Exception
+    {
+        createFile("src/offset-regression.txt", "before\r\n😀target\r\ntarget\rtarget\ntarget");
+        List<SearchResult> results = service.fileSearch("target", "offset-regression.txt");
+        assertEquals(4, results.size());
+        assertEquals(List.of(2, 3, 4, 5), results.stream().map(SearchResult::lineNumber).sorted().toList());
+        assertTrue(results.stream().anyMatch(r -> r.lineNumber() == 2 && r.lineContent().equals("😀target")));
+        assertTrue(results.stream().filter(r -> r.lineNumber() > 2).allMatch(r -> r.lineContent().equals("target")));
+    }
+
     private static final String TEST_PROJECT_NAME = "SearchTestProject";
     private IProject project;
     private IJavaProject javaProject;
@@ -482,7 +493,10 @@ public class SearchServiceTest
         // Verify the file was actually changed
         IFile file = project.getFile("src/com/example/TestClass.java");
         file.refreshLocal(IResource.DEPTH_ZERO, monitor);
-        String content = new String(file.getContents().readAllBytes());
+        String content;
+        try (var input = file.getContents()) {
+            content = new String(input.readAllBytes(), file.getCharset());
+        }
         assertTrue(content.contains("demoMethod"), "File should contain replacement text");
         assertFalse(content.contains("testMethod"), "File should no longer contain original text");
     }

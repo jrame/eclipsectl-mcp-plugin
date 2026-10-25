@@ -43,7 +43,10 @@ public class ToolExecutor
         Method method = getFunctionCallbackByName( name ).orElseThrow( () -> new RuntimeException("Tool " + name + " not found!" ) ); 
         method.getAnnotationsByType( eclipsectlmcp.mcp.annotations.ToolParam.class );
         Object[] argValues = mapArguments( method, args );
-        CompletableFuture<Object> future = CompletableFuture.supplyAsync( () -> invokeMethod( method, argValues ) );
+        CompletableFuture<Object> future = CompletableFuture.supplyAsync( () -> {
+            try { return ToolExecution.capture( () -> invokeMethod( method, argValues ) ); }
+            catch (Exception e) { throw new java.util.concurrent.CompletionException(e); }
+        } );
         return future;
     }
     private Object invokeMethod( Method method, Object[] args )

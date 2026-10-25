@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.core.resources.IFile;
@@ -93,7 +95,7 @@ public class EclipseSearchService {
 	    }
 	    catch (Exception e) {
             logger.error(e.getMessage(), e);
-	        return "Error in open type: " + e.getMessage();
+	        return ToolExecution.error("Error in open type: " + e.getMessage());
 	    }
 	}
 
@@ -135,7 +137,7 @@ public class EclipseSearchService {
             
         } catch (Exception e) {
         	e.printStackTrace();
-            return "Error: " + e.getMessage();
+            return ToolExecution.error("Error: " + e.getMessage());
         }
     }
     
@@ -313,7 +315,7 @@ public class EclipseSearchService {
             );
 
             if (pattern == null) {
-                return "Error: Could not create search pattern for element: " + elementName;
+                return ToolExecution.error("Error: Could not create search pattern for element: " + elementName);
             }
 
             // Create search scope
@@ -352,7 +354,7 @@ public class EclipseSearchService {
 
         } catch (Exception e) {
             logger.error("Error finding references", e);
-            return "Error finding references: " + e.getMessage();
+            return ToolExecution.error("Error finding references: " + e.getMessage());
         }
     }
 
@@ -531,7 +533,7 @@ public class EclipseSearchService {
             return String.join("\n", results);
         } catch (Exception e) {
             logger.error("Error getting type hierarchy", e);
-            return "Error getting type hierarchy: " + e.getMessage();
+            return ToolExecution.error("Error getting type hierarchy: " + e.getMessage());
         }
     }
 
@@ -606,7 +608,7 @@ public class EclipseSearchService {
             return String.join("\n", results);
         } catch (Exception e) {
             logger.error("Error finding implementations", e);
-            return "Error finding implementations: " + e.getMessage();
+            return ToolExecution.error("Error finding implementations: " + e.getMessage());
         }
     }
 

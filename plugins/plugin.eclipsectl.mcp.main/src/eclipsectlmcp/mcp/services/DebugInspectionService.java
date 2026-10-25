@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import org.eclipse.debug.core.model.IDebugTarget;
 import org.eclipse.debug.core.model.IStackFrame;
 import org.eclipse.debug.core.model.IThread;
@@ -27,12 +29,12 @@ public class DebugInspectionService extends DebugServiceBase {
 			return uiSync.syncCall(() -> {
 				IDebugTarget debugTarget = getActiveDebugTarget();
 				if (debugTarget == null) {
-					return "Error: No active debug session. Please launch a debug configuration first.";
+					return ToolExecution.error("Error: No active debug session. Please launch a debug configuration first.");
 				}
 
 				IThread suspendedThread = getSuspendedThread(debugTarget);
 				if (suspendedThread == null) {
-					return "Error: Debug session is not suspended. Set a breakpoint or suspend execution first.";
+					return ToolExecution.error("Error: Debug session is not suspended. Set a breakpoint or suspend execution first.");
 				}
 
 				// Apply defaults
@@ -98,7 +100,7 @@ public class DebugInspectionService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error getting stack trace", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -113,19 +115,19 @@ public class DebugInspectionService extends DebugServiceBase {
 			return uiSync.syncCall(() -> {
 				IDebugTarget debugTarget = getActiveDebugTarget();
 				if (debugTarget == null) {
-					return "Error: No active debug session. Please launch a debug configuration first.";
+					return ToolExecution.error("Error: No active debug session. Please launch a debug configuration first.");
 				}
 
 				IThread suspendedThread = getSuspendedThread(debugTarget);
 				if (suspendedThread == null) {
-					return "Error: Debug session is not suspended. Set a breakpoint or suspend execution first.";
+					return ToolExecution.error("Error: Debug session is not suspended. Set a breakpoint or suspend execution first.");
 				}
 
 				int frameIndex = (stackFrameIndex != null && stackFrameIndex >= 0) ? stackFrameIndex : 0;
 
 				IStackFrame[] frames = suspendedThread.getStackFrames();
 				if (frameIndex >= frames.length) {
-					return "Error: Stack frame index " + frameIndex + " out of bounds (max: " + (frames.length - 1) + ")";
+					return ToolExecution.error("Error: Stack frame index " + frameIndex + " out of bounds (max: " + (frames.length - 1) + ")");
 				}
 
 				IStackFrame frame = frames[frameIndex];
@@ -152,7 +154,7 @@ public class DebugInspectionService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error getting variables", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -167,24 +169,24 @@ public class DebugInspectionService extends DebugServiceBase {
 		try {
 			return uiSync.syncCall(() -> {
 				if (expression == null || expression.trim().isEmpty()) {
-					return "Error: Expression cannot be empty";
+					return ToolExecution.error("Error: Expression cannot be empty");
 				}
 
 				IDebugTarget debugTarget = getActiveDebugTarget();
 				if (debugTarget == null) {
-					return "Error: No active debug session. Please launch a debug configuration first.";
+					return ToolExecution.error("Error: No active debug session. Please launch a debug configuration first.");
 				}
 
 				IThread suspendedThread = getSuspendedThread(debugTarget);
 				if (suspendedThread == null) {
-					return "Error: Debug session is not suspended. Set a breakpoint or suspend execution first.";
+					return ToolExecution.error("Error: Debug session is not suspended. Set a breakpoint or suspend execution first.");
 				}
 
 				int frameIndex = (stackFrameIndex != null && stackFrameIndex >= 0) ? stackFrameIndex : 0;
 
 				IStackFrame[] frames = suspendedThread.getStackFrames();
 				if (frameIndex >= frames.length) {
-					return "Error: Stack frame index " + frameIndex + " out of bounds (max: " + (frames.length - 1) + ")";
+					return ToolExecution.error("Error: Stack frame index " + frameIndex + " out of bounds (max: " + (frames.length - 1) + ")");
 				}
 
 				IStackFrame frame = frames[frameIndex];
@@ -213,15 +215,15 @@ public class DebugInspectionService extends DebugServiceBase {
 					}
 
 					// For complex expressions, we'd need ASTEvaluationEngine
-					return "Error: Expression evaluation requires ASTEvaluationEngine (not yet fully implemented). " +
-							"Try using getVariables to inspect local variables instead.";
+					return ToolExecution.error("Error: Expression evaluation requires ASTEvaluationEngine (not yet fully implemented). " +
+							"Try using getVariables to inspect local variables instead.");
 				}
 
-				return "Error: Expression evaluation only supported for Java debug sessions.";
+				return ToolExecution.error("Error: Expression evaluation only supported for Java debug sessions.");
 			});
 		} catch (Exception e) {
 			logger.error("Error evaluating expression", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 }

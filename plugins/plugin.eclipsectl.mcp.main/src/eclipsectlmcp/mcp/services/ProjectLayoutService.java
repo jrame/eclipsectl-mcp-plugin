@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -28,7 +30,7 @@ public class ProjectLayoutService {
     public String getProjectLayout(String projectName)
     {
         if (projectName == null || projectName.isEmpty()) {
-            return "Error: Project name cannot be null or empty.";
+            return ToolExecution.error("Error: Project name cannot be null or empty.");
         }
         IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
         if (project == null || !project.exists())
@@ -45,7 +47,7 @@ public class ProjectLayoutService {
         catch (CoreException e)
         {
             logger.error(e.getMessage(), e);
-            return "Error retrieving project layout: " + e.getMessage();
+            return ToolExecution.error("Error retrieving project layout: " + e.getMessage());
         }
 
         return result.toString();

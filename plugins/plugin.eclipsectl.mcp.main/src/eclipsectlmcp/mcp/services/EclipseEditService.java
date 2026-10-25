@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -120,7 +122,7 @@ public class EclipseEditService {
             return performReplacements(matches, searchText, add, isRegex, addRegex);
             
         } catch (Exception e) {
-            return "Error during operation: " + e.getMessage();
+            return ToolExecution.error("Error during operation: " + e.getMessage());
         }
     }
     
@@ -218,7 +220,7 @@ public class EclipseEditService {
             return String.format("Inserted text in %d file(s):%n%s", filesModified, result.toString());
             
         } catch (Exception e) {
-            return "Error during insert: " + e.getMessage();
+            return ToolExecution.error("Error during insert: " + e.getMessage());
         }
     }
     

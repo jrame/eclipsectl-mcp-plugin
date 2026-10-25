@@ -7,6 +7,8 @@ import eclipsectlmcp.mcp.annotations.McpServer;
 import eclipsectlmcp.mcp.annotations.Tool;
 import eclipsectlmcp.mcp.annotations.ToolParam;
 import eclipsectlmcp.mcp.services.RefactoringService;
+import eclipsectlmcp.mcp.services.JavaRefactoringService;
+import org.eclipse.jdt.core.IJavaElement;
 import jakarta.inject.Inject;
 
 @Creatable
@@ -16,6 +18,24 @@ public class EclipseRefactorMcpServer
     @Inject
     private RefactoringService codeEditingService;
     
+    @Inject
+    private JavaRefactoringService javaRefactoringService;
+
+    @Tool(name="refactorApplyPreview", description="Apply exactly the frozen position-based Java refactoring identified by a previewId. Refuses changed or unsaved affected sources before writing any files. Tokens expire after 15 minutes and are consumed on an apply attempt; read all report pages first. Preserves Eclipse refactoring undo.", type="object")
+    public String refactorApplyPreview(
+        @ToolParam(name="previewId", description="One-use ID returned by a position-based refactoring with preview=true", required=true) String previewId)
+    {
+        return javaRefactoringService.applyPreview(previewId);
+    }
+
+    @Tool(name="refactorGetPreview", description="Read the saved full refactoring report in pages of at most 100000 characters. Follow the returned offsets in order to read the entire diff before refactorApplyPreview. Does not recalculate or change files.", type="object")
+    public String refactorGetPreview(
+        @ToolParam(name="previewId", description="ID returned by a position-based refactoring with preview=true", required=true) String previewId,
+        @ToolParam(name="offset", description="Zero-based report character offset (default: 0); use the next offset returned by the preceding page", required=false) Integer offset)
+    {
+        return javaRefactoringService.getPreview(previewId, offset);
+    }
+
     @Tool(name="renameFile", description="Renames a file in the specified project.", type="object")
     public String renameFile(
         @ToolParam(name="projectName", description="The name of the project containing the file. Optional if file path is unique across projects or starts with /projectName/", required=false) String projectName,
@@ -72,4 +92,113 @@ public class EclipseRefactorMcpServer
     {
         return codeEditingService.refactorExtractMethod(projectName, filePath, startLine, endLine, methodName, visibility);
     }
+
+    @Tool(name="refactorRenameMethod", description="Rename a Java method and update its references.", type="object")
+    public String refactorRenameMethod(
+        @ToolParam(name="filePath", description="Java file relative to project, /project/path, or native absolute path", required=true) String filePath,
+        @ToolParam(name="offset", description="Zero-based UTF-16 offset in the saved Java source", required=true) int offset,
+        @ToolParam(name="newName", description="newName", required=true) String newName,
+        @ToolParam(name="projectName", description="Optional project name", required=false) String projectName,
+        @ToolParam(name="preview", description="Create a frozen preview and one-use previewId for refactorApplyPreview (default: false). False applies directly against current source without preview protection.", required=false, type="boolean") Boolean preview)
+    {
+        return javaRefactoringService.rename(projectName, filePath, offset, newName, IJavaElement.METHOD, Boolean.TRUE.equals(preview));
+    }
+
+
+    @Tool(name="refactorRenameField", description="Rename a Java field and update its references.", type="object")
+    public String refactorRenameField(
+        @ToolParam(name="filePath", description="Java file relative to project, /project/path, or native absolute path", required=true) String filePath,
+        @ToolParam(name="offset", description="Zero-based UTF-16 offset in the saved Java source", required=true) int offset,
+        @ToolParam(name="newName", description="newName", required=true) String newName,
+        @ToolParam(name="projectName", description="Optional project name", required=false) String projectName,
+        @ToolParam(name="preview", description="Create a frozen preview and one-use previewId for refactorApplyPreview (default: false). False applies directly against current source without preview protection.", required=false, type="boolean") Boolean preview)
+    {
+        return javaRefactoringService.rename(projectName, filePath, offset, newName, IJavaElement.FIELD, Boolean.TRUE.equals(preview));
+    }
+
+
+    @Tool(name="refactorRenameVariable", description="Rename a local Java variable or parameter and update its references.", type="object")
+    public String refactorRenameVariable(
+        @ToolParam(name="filePath", description="Java file path or unique simple class name (for named selection)", required=true) String filePath,
+        @ToolParam(name="offset", description="Zero-based UTF-16 offset; exclusive with oldName, lineNumber and methodName", required=false, type="integer") Integer offset,
+        @ToolParam(name="newName", description="newName", required=true) String newName,
+        @ToolParam(name="projectName", description="Optional project name", required=false) String projectName,
+        @ToolParam(name="preview", description="Create a frozen preview and one-use previewId for refactorApplyPreview (default: false). False applies directly against current source without preview protection.", required=false, type="boolean") Boolean preview,
+        @ToolParam(name="oldName", description="Existing local variable or parameter name; requires lineNumber and/or methodName", required=false) String oldName,
+        @ToolParam(name="lineNumber", description="1-based line containing a declaration or reference; combine with methodName to narrow selection", required=false, type="integer") Integer lineNumber,
+        @ToolParam(name="methodName", description="Enclosing method name; ambiguous bindings or overloads are refused", required=false) String methodName)
+    {
+        return javaRefactoringService.renameVariable(projectName, filePath, offset, oldName, newName,
+                lineNumber, methodName, Boolean.TRUE.equals(preview));
+    }
+
+
+    @Tool(name="refactorChangeSignature", description="Change a Java method signature and update its callers.", type="object")
+    public String refactorChangeSignature(
+        @ToolParam(name="filePath", description="Java file relative to project, /project/path, or native absolute path", required=true) String filePath,
+        @ToolParam(name="offset", description="Zero-based UTF-16 offset in the saved Java source", required=true) int offset,
+        @ToolParam(name="newName", description="newName", required=false) String newName,
+        @ToolParam(name="returnType", description="returnType", required=false) String returnType,
+        @ToolParam(name="visibility", description="Visibility: public, protected, private or package", required=false) String visibility,
+        @ToolParam(name="parameters", description="JSON array in desired order: {\"oldIndex\":0,\"name\":\"value\",\"type\":\"int\"}; new parameters use oldIndex -1 and defaultValue; [] removes all parameters", required=false) String parameters,
+        @ToolParam(name="projectName", description="Optional project name", required=false) String projectName,
+        @ToolParam(name="preview", description="Create a frozen preview and one-use previewId for refactorApplyPreview (default: false). False applies directly against current source without preview protection.", required=false, type="boolean") Boolean preview)
+    {
+        return javaRefactoringService.changeSignature(projectName, filePath, offset, newName, returnType, visibility, parameters, Boolean.TRUE.equals(preview));
+    }
+
+
+    @Tool(name="refactorExtractVariable", description="Extract a Java expression into a local variable.", type="object")
+    public String refactorExtractVariable(
+        @ToolParam(name="filePath", description="Java file relative to project, /project/path, or native absolute path", required=true) String filePath,
+        @ToolParam(name="offset", description="Zero-based UTF-16 offset in the saved Java source", required=true) int offset,
+        @ToolParam(name="length", description="Selection length in UTF-16 code units (positive)", required=true) int length,
+        @ToolParam(name="variableName", description="variableName", required=true) String variableName,
+        @ToolParam(name="replaceAll", description="Replace all matching occurrences (plugin default: false)", required=false, type="boolean") Boolean replaceAll,
+        @ToolParam(name="declareFinal", description="Declare the extracted variable final (plugin default: false)", required=false, type="boolean") Boolean declareFinal,
+        @ToolParam(name="projectName", description="Optional project name", required=false) String projectName,
+        @ToolParam(name="preview", description="Create a frozen preview and one-use previewId for refactorApplyPreview (default: false). False applies directly against current source without preview protection.", required=false, type="boolean") Boolean preview)
+    {
+        return javaRefactoringService.extractVariable(projectName, filePath, offset, length, variableName, replaceAll, declareFinal, Boolean.TRUE.equals(preview));
+    }
+
+
+    @Tool(name="refactorExtractConstant", description="Extract a Java expression into a static final constant.", type="object")
+    public String refactorExtractConstant(
+        @ToolParam(name="filePath", description="Java file relative to project, /project/path, or native absolute path", required=true) String filePath,
+        @ToolParam(name="offset", description="Zero-based UTF-16 offset in the saved Java source", required=true) int offset,
+        @ToolParam(name="length", description="Selection length in UTF-16 code units (positive)", required=true) int length,
+        @ToolParam(name="constantName", description="constantName", required=true) String constantName,
+        @ToolParam(name="visibility", description="Visibility: public, protected, private or package", required=false) String visibility,
+        @ToolParam(name="replaceAll", description="Replace all matching occurrences (plugin default: false)", required=false, type="boolean") Boolean replaceAll,
+        @ToolParam(name="projectName", description="Optional project name", required=false) String projectName,
+        @ToolParam(name="preview", description="Create a frozen preview and one-use previewId for refactorApplyPreview (default: false). False applies directly against current source without preview protection.", required=false, type="boolean") Boolean preview)
+    {
+        return javaRefactoringService.extractConstant(projectName, filePath, offset, length, constantName, visibility, replaceAll, Boolean.TRUE.equals(preview));
+    }
+
+
+    @Tool(name="refactorInlineMethod", description="Inline a Java method declaration or invocation.", type="object")
+    public String refactorInlineMethod(
+        @ToolParam(name="filePath", description="Java file relative to project, /project/path, or native absolute path", required=true) String filePath,
+        @ToolParam(name="offset", description="Zero-based UTF-16 offset in the saved Java source", required=true) int offset,
+        @ToolParam(name="inlineAll", description="Inline all invocations (default: true at declaration, false at invocation)", required=false, type="boolean") Boolean inlineAll,
+        @ToolParam(name="deleteSource", description="Delete the method declaration (requires all invocations; default: false)", required=false, type="boolean") Boolean deleteSource,
+        @ToolParam(name="projectName", description="Optional project name", required=false) String projectName,
+        @ToolParam(name="preview", description="Create a frozen preview and one-use previewId for refactorApplyPreview (default: false). False applies directly against current source without preview protection.", required=false, type="boolean") Boolean preview)
+    {
+        return javaRefactoringService.inlineMethod(projectName, filePath, offset, inlineAll, deleteSource, Boolean.TRUE.equals(preview));
+    }
+
+
+    @Tool(name="refactorInlineVariable", description="Inline a local Java variable using its initializer.", type="object")
+    public String refactorInlineVariable(
+        @ToolParam(name="filePath", description="Java file relative to project, /project/path, or native absolute path", required=true) String filePath,
+        @ToolParam(name="offset", description="Zero-based UTF-16 offset in the saved Java source", required=true) int offset,
+        @ToolParam(name="projectName", description="Optional project name", required=false) String projectName,
+        @ToolParam(name="preview", description="Create a frozen preview and one-use previewId for refactorApplyPreview (default: false). False applies directly against current source without preview protection.", required=false, type="boolean") Boolean preview)
+    {
+        return javaRefactoringService.inlineVariable(projectName, filePath, offset, Boolean.TRUE.equals(preview));
+    }
+
 }

@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -100,7 +102,7 @@ public class EclipseRunService {
 
         } catch (CoreException e) {
             logger.error("Error listing launch configurations", e);
-            return "Error listing launch configurations: " + e.getMessage();
+            return ToolExecution.error("Error listing launch configurations: " + e.getMessage());
         }
     }
 
@@ -127,7 +129,7 @@ public class EclipseRunService {
 
             ILaunch launch = launchHolder[0];
             if (launch == null) {
-                return "Error: Failed to launch configuration '" + configurationName + "'.";
+                return ToolExecution.error("Error: Failed to launch configuration '" + configurationName + "'.");
             }
 
             // Start file logging
@@ -154,7 +156,7 @@ public class EclipseRunService {
 
         } catch (Exception e) {
             logger.error("Error executing launch configuration: " + configurationName, e);
-            return "Error executing launch configuration '" + configurationName + "': " + e.getMessage();
+            return ToolExecution.error("Error executing launch configuration '" + configurationName + "': " + e.getMessage());
         }
     }
 

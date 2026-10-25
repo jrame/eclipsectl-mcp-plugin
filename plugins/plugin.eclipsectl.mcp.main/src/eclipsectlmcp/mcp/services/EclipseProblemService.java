@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.core.resources.IMarker;
@@ -89,7 +91,7 @@ public class EclipseProblemService {
             
         } catch (Exception e) {
             logger.error("Error retrieving Eclipse problems", e);
-            return "Error retrieving problems: " + e.getMessage();
+            return ToolExecution.error("Error retrieving problems: " + e.getMessage());
         }
     }
     
@@ -174,7 +176,7 @@ public class EclipseProblemService {
             return result.toString();
         } catch (Exception e) {
             logger.error("Error getting markers", e);
-            return "Error getting markers: " + e.getMessage();
+            return ToolExecution.error("Error getting markers: " + e.getMessage());
         }
     }
 

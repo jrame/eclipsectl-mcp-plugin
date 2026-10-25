@@ -1,6 +1,7 @@
 package eclipsectlmcp.tests.mcp.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -119,6 +120,67 @@ public class FileEditingServiceTest {
         }
     }
     
+    @Test
+    public void rejectsWorkspaceChangeBetweenSnapshotAndWrite() throws Exception {
+        IFile file = createFile("src/race.txt", "original");
+        FileTextEditService racingService = new FileTextEditService() {
+            private int checks;
+            @Override protected void requireCleanEditors(IFile checked) {
+                if (++checks == 2) {
+                    try {
+                        file.setContents(new ByteArrayInputStream("concurrent edit".getBytes()), IResource.KEEP_HISTORY, monitor);
+                    } catch (CoreException e) { throw new IllegalStateException(e); }
+                }
+            }
+        };
+        var syncField = eclipsectlmcp.mcp.services.CodeEditingServiceBase.class.getDeclaredField("sync");
+        syncField.setAccessible(true);
+        syncField.set(racingService, syncField.get(service));
+        assertThrows(IllegalStateException.class,
+                () -> racingService.replaceFileContent(TEST_PROJECT_NAME, "src/race.txt", "replacement"));
+        assertEquals("concurrent edit", ResourceUtilities.readFileContent(file));
+    }
+
+    @Test
+    public void rejectsUnsavedConnectedBufferWithoutLosingText() throws Exception {
+        IFile file = createFile("src/dirty.txt", "original\r\n");
+        var manager = org.eclipse.core.filebuffers.FileBuffers.getTextFileBufferManager();
+        var kind = org.eclipse.core.filebuffers.LocationKind.IFILE;
+        manager.connect(file.getFullPath(), kind, monitor);
+        try {
+            var buffer = manager.getTextFileBuffer(file.getFullPath(), kind);
+            buffer.getDocument().set("unsaved typing");
+            assertThrows(IllegalStateException.class,
+                    () -> service.replaceFileContent(TEST_PROJECT_NAME, "src/dirty.txt", "replacement"));
+            assertEquals("unsaved typing", buffer.getDocument().get());
+            assertEquals("original\r\n", ResourceUtilities.readFileContent(file));
+        } finally {
+            manager.disconnect(file.getFullPath(), kind, monitor);
+        }
+    }
+
+    @Test
+    public void rejectsExternalDiskChangesWithoutOverwriting() throws Exception {
+        IFile file = createFile("src/conflict.txt", "original");
+        var diskPath = file.getLocation().toFile().toPath();
+        var jobs = org.eclipse.core.runtime.jobs.Job.getJobManager();
+        // Keep background auto-refresh from synchronizing away the conflict under test.
+        jobs.beginRule(file, monitor);
+        try {
+            long originalTimestamp = file.getLocalTimeStamp();
+            java.nio.file.Files.writeString(diskPath, "external changes");
+            // Immediate writes can share a timestamp on filesystems with a coarse clock.
+            java.nio.file.Files.setLastModifiedTime(diskPath,
+                    java.nio.file.attribute.FileTime.fromMillis(originalTimestamp + 2000));
+            assertFalse(file.isSynchronized(IResource.DEPTH_ZERO), "Fixture must contain an unrefreshed disk change");
+            assertThrows(IllegalStateException.class,
+                    () -> service.replaceFileContent(TEST_PROJECT_NAME, "src/conflict.txt", "replacement"));
+            assertEquals("external changes", java.nio.file.Files.readString(diskPath));
+        } finally {
+            jobs.endRule(file);
+        }
+    }
+
     @Test
     public void testReplaceLines() throws CoreException, IOException {
         // Create a test file with multiple lines
@@ -416,8 +478,8 @@ public class FileEditingServiceTest {
 	        service.replaceStringInFile(TEST_PROJECT_NAME, "src/testFile.txt", oldString, newString, 11, 13);
 	    });
 	    
-	    assertTrue(exception.getMessage().contains("Start line"));
-	    assertTrue(exception.getMessage().contains("beyond the end of the file"));
+	    assertTrue(exception.getMessage().contains("Invalid line range"));
+	    assertTrue(exception.getMessage().contains("File has"));
 	}
 	
 	@Test

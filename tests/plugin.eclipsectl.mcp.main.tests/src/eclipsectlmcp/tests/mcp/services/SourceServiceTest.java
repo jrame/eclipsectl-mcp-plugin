@@ -1,6 +1,7 @@
 package eclipsectlmcp.tests.mcp.services;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -201,7 +202,7 @@ public class SourceServiceTest {
 	// ===== readJava / writeJava / removeJava / removeLines / resetReadGate tests =====
 
 	@Test
-	public void testReadJava() {
+	public void testReadJava() throws Exception {
 		System.out.println("\n" + repeat("=", 60));
 		System.out.println("Test: readJava");
 		System.out.println(repeat("=", 60));
@@ -215,7 +216,11 @@ public class SourceServiceTest {
 			assertTrue(result.contains("value"), "Should contain field name");
 			assertTrue(result.contains("getValue"), "Should contain method name");
 			assertTrue(result.contains("setValue"), "Should contain method name");
-			assertTrue(result.contains("lines"), "Should contain line ranges");
+			IFile source = project.getFile("src/com/example/CleanClass.java");
+            try (var input = source.getContents()) {
+                assertEquals(new String(input.readAllBytes(), source.getCharset()).strip(), result,
+                        "readJava should preserve source content without surrounding whitespace");
+            }
 		} catch (Exception e) {
 			System.out.println("Error: " + e.getMessage());
 			e.printStackTrace();

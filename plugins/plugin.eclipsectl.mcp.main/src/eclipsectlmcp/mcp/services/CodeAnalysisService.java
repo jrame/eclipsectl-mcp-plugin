@@ -1,6 +1,8 @@
 
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -439,7 +441,7 @@ public class CodeAnalysisService
                 catch (Exception e) 
                 {
                     logger.error(e.getMessage(), e);
-                    result.append(" [Error retrieving method details]\n");
+                    result.append(ToolExecution.error(" [Error retrieving method details]\n"));
                 }
             }
         }
@@ -489,7 +491,7 @@ public class CodeAnalysisService
                     
                 } catch (Exception e) {
                     logger.error(e.getMessage(), e);
-                    result.append(" [Error retrieving method details]\n");
+                    result.append(ToolExecution.error(" [Error retrieving method details]\n"));
                 }
             }
         }

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
@@ -600,7 +601,13 @@ public class DebugServiceTest {
 		// Wait for build to complete
 		Thread.sleep(2000);
 
-		// Verify build output exists
+		// Fail with diagnostics before launch could open a compilation-error dialog.
+        for (IMarker marker : project.findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE)) {
+            assertTrue(marker.getAttribute(IMarker.SEVERITY, IMarker.SEVERITY_INFO) != IMarker.SEVERITY_ERROR,
+                    "Debug fixture must compile: " + marker.getAttribute(IMarker.MESSAGE, ""));
+        }
+
+        // Verify build output exists
 		boolean classExists = project.getFile("bin/com/DebugTarget.class").exists();
 		System.out.println("Class file exists: " + classExists);
 		if (!classExists) {
@@ -804,7 +811,8 @@ public class DebugServiceTest {
 		javaProject.setOutputLocation(project.getFolder("bin").getFullPath(), monitor);
 		IClasspathEntry[] entries = new IClasspathEntry[] {
 			JavaCore.newSourceEntry(project.getFolder("src").getFullPath()),
-			JavaCore.newContainerEntry(new Path(JavaRuntime.JRE_CONTAINER))
+			JavaCore.newContainerEntry(new Path(JavaRuntime.JRE_CONTAINER)),
+			JavaCore.newContainerEntry(new Path("org.eclipse.jdt.junit.JUNIT_CONTAINER/5"))
 		};
 		javaProject.setRawClasspath(entries, monitor);
 	}

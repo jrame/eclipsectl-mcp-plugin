@@ -70,7 +70,7 @@ public class EclipseMcpServer
 	@Tool(name="run", description="Run an Eclipse launch configuration. Async by default with file logging.", type="object")
     public String run(
             @ToolParam(name="configuration", description="Configuration name, if empty will return all configuration names", required=false) String configuration,
-            @ToolParam(name="waitForCompletion", description="If true, waits for the process to terminate (max 120s). Default: false", required=false) Boolean waitForCompletion)
+            @ToolParam(name="waitForCompletion", description="If true, waits for the process to terminate (max 120s). Default: false", required=false, type="boolean") Boolean waitForCompletion)
     {
         return eclipseRunService.run(configuration, waitForCompletion != null && waitForCompletion);
     }

@@ -148,7 +148,6 @@ public class TmuxService
             case "java" -> "java";
             case "js", "javascript" -> "javascript";
             case "ts", "typescript" -> "typescript";
-            case "py", "python" -> "python";
             case "cpp", "cxx", "cc" -> "cpp";
             case "c" -> "c";
             case "cs" -> "csharp";

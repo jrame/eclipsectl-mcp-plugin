@@ -1,10 +1,10 @@
 package eclipsectlmcp.mcp.services;
 
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Objects;
 import java.util.Optional;
 
+import org.eclipse.core.filebuffers.FileBuffers;
+import org.eclipse.core.filebuffers.LocationKind;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -80,49 +80,53 @@ public abstract class CodeEditingServiceBase
 				});
 	}
 
-	/**
-	 * Refreshes an editor displaying the given file.
-	 */
-	protected void refreshEditor(IFile file)
-	{
-	    try
-	    {
-	    	file.getParent().refreshLocal(IResource.DEPTH_ONE, null);
+    /** Refuse disk edits while any window has unsaved changes for this file. Runs on the UI thread. */
+    protected void requireCleanEditors(IFile file) {
+        var buffer = FileBuffers.getTextFileBufferManager().getTextFileBuffer(file.getFullPath(), LocationKind.IFILE);
+        if (buffer != null && buffer.isDirty()) {
+            throw new IllegalStateException("Error: File '" + file.getName()
+                    + "' has unsaved buffer changes. Save or discard them before retrying.");
+        }
+        if (!PlatformUI.isWorkbenchRunning()) return;
+        for (IWorkbenchWindow window : PlatformUI.getWorkbench().getWorkbenchWindows()) {
+            for (IWorkbenchPage page : window.getPages()) {
+                for (var reference : page.getEditorReferences()) {
+                    IEditorPart editor = reference.getEditor(false);
+                    if (editor != null && displaysFile(editor, file) && editor.isDirty()) {
+                        throw new IllegalStateException("Error: File '" + file.getName()
+                                + "' has unsaved editor changes. Save or discard them before retrying.");
+                    }
+                }
+            }
+        }
+    }
 
-	    	Optional.ofNullable(PlatformUI.getWorkbench())
-	            .map(IWorkbench::getActiveWorkbenchWindow)
-	            .map(IWorkbenchWindow::getActivePage)
-	            .ifPresent(page -> {
-	                Arrays.stream(page.getEditorReferences())
-	                    .map(ref -> ref.getEditor(false))
-	                    .filter(Objects::nonNull)
-	                    .filter(editor -> {
-	                        IEditorInput input = editor.getEditorInput();
-	                        return input instanceof IFileEditorInput &&
-	                               file.equals(((IFileEditorInput) input).getFile());
-	                    })
-	                    .findFirst()
-	                    .ifPresent(editor -> {
-	                        try
-	                        {
-	                        	IEditorInput input = editor.getEditorInput();
-	                        	if (editor instanceof ITextEditor)
-	                        	{
-	                        		((ITextEditor) editor).getDocumentProvider().resetDocument(input);
-	                        	}
-	                        }
-	                        catch ( Exception e )
-	                        {
-	                        	throw new RuntimeException( e );
-	                        }
-	                    });
-	            });
-	    }
-	    catch (Exception e)
-	    {
-	        logger.error("Error refreshing editor: " + e.getMessage());
-	    }
-	}
+    private boolean displaysFile(IEditorPart editor, IFile file) {
+        IEditorInput input = editor.getEditorInput();
+        return input instanceof IFileEditorInput fileInput && file.equals(fileInput.getFile());
+    }
+
+    /** Reload clean editors only. Never reset a document containing unsaved user input. */
+    protected void refreshEditor(IFile file) {
+        try {
+            requireCleanEditors(file);
+            file.getParent().refreshLocal(IResource.DEPTH_ONE, null);
+            if (!PlatformUI.isWorkbenchRunning()) return;
+            for (IWorkbenchWindow window : PlatformUI.getWorkbench().getWorkbenchWindows()) {
+                for (IWorkbenchPage page : window.getPages()) {
+                    for (var reference : page.getEditorReferences()) {
+                        IEditorPart editor = reference.getEditor(false);
+                        if (editor instanceof ITextEditor textEditor && displaysFile(editor, file)
+                                && !editor.isDirty()) {
+                            textEditor.getDocumentProvider().resetDocument(editor.getEditorInput());
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error refreshing editor: " + e.getMessage());
+        }
+    }
 
 	/**
 	 * Resolves a file in a project, supporting relative paths, bare filenames (recursive search),

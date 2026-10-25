@@ -212,7 +212,7 @@ public class SearchService
         TextSearchEngine engine = TextSearchEngine.createDefault();
 
         // Collect all matches first: TextSearchRequestor may be called concurrently.
-        Map<IFile, List<LineMatch>> matchesByFile = new LinkedHashMap<>();
+        Map<IFile, Integer> matchesByFile = new LinkedHashMap<>();
 
         TextSearchRequestor requestor = new TextSearchRequestor()
         {
@@ -226,14 +226,9 @@ public class SearchService
             public boolean acceptPatternMatch(TextSearchMatchAccess matchAccess) throws CoreException
             {
                 IFile file = matchAccess.getFile();
-                int offset = matchAccess.getMatchOffset();
-                int length = matchAccess.getMatchLength();
-
-                LineInfo lineInfo = getLineInfo(file, offset);
                 synchronized (matchesByFile)
                 {
-                    matchesByFile.computeIfAbsent(file, f -> new ArrayList<>())
-                            .add(new LineMatch(lineInfo.lineNumber, offset, length));
+                    matchesByFile.merge(file, 1, Integer::sum);
                 }
 
                 return true;
@@ -252,12 +247,12 @@ public class SearchService
             }
 
             List<SearchAndReplaceResult> results = new ArrayList<>();
-            for (Map.Entry<IFile, List<LineMatch>> entry : matchesByFile.entrySet())
+            for (Map.Entry<IFile, Integer> entry : matchesByFile.entrySet())
             {
                 IFile file = entry.getKey();
 
                 // ensure deterministic
-                int matchesFound = entry.getValue().size();
+                int matchesFound = entry.getValue();
                 int replacements = replaceInFile(file, containingText, replacementText);
 
                 results.add(new SearchAndReplaceResult(file, matchesFound, replacements));
@@ -317,11 +312,6 @@ public class SearchService
         return count;
     }
 
-    private record LineMatch(int lineNumber, int offset, int length)
-    {
-
-    }
-
     private List<SearchResult> search(Pattern pattern, String... fileNamePatterns)
     {
         Objects.requireNonNull(pattern, "pattern");
@@ -339,6 +329,7 @@ public class SearchService
         TextSearchEngine engine = TextSearchEngine.createDefault();
 
         List<SearchResult> results = new ArrayList<>();
+        SearchTextSnapshot.Cache<IFile> snapshots = new SearchTextSnapshot.Cache<>();
 
         TextSearchRequestor requestor = new TextSearchRequestor()
         {
@@ -353,11 +344,14 @@ public class SearchService
             {
                 IFile file = matchAccess.getFile();
 
-                // Convert offset -> line number/content by reading the file.
-                int matchOffset = matchAccess.getMatchOffset();
-
-                LineInfo lineInfo = getLineInfo(file, matchOffset);
-                results.add(new SearchResult(file, lineInfo.lineNumber, lineInfo.lineContent));
+                // Capture the engine's exact UTF-16 content once per file, not a later disk version.
+                SearchTextSnapshot snapshot = snapshots.get(file,
+                        () -> matchAccess.getFileContent(0, matchAccess.getFileContentLength()));
+                SearchTextSnapshot.LineInfo lineInfo = snapshot.lineAt(matchAccess.getMatchOffset());
+                synchronized (results)
+                {
+                    results.add(new SearchResult(file, lineInfo.lineNumber(), lineInfo.lineContent()));
+                }
                 return true;
             }
         };
@@ -373,43 +367,6 @@ public class SearchService
         {
             logger.error(e.getMessage(), e);
             throw new RuntimeException("Error searching files: " + ExceptionUtils.getRootCauseMessage(e), e);
-        }
-    }
-
-    private record LineInfo(int lineNumber, String lineContent)
-    {
-
-    }
-
-    private static LineInfo getLineInfo(IFile file, int offset)
-    {
-        if (file == null)
-        {
-            return new LineInfo(-1, "");
-        }
-
-        try
-        {
-            List<String> lines = ResourceUtilities.readFileLines(file);
-
-            // Compute line number from offset by walking through lines and accounting for '\n'.
-            int charCount = 0;
-            for (int i = 0; i < lines.size(); i++)
-            {
-                String line = lines.get(i);
-                int nextCharCount = charCount + line.length() + 1;
-                if (offset < nextCharCount)
-                {
-                    return new LineInfo(i + 1, line);
-                }
-                charCount = nextCharCount;
-            }
-
-            return new LineInfo(-1, "");
-        }
-        catch (CoreException | IOException e)
-        {
-            return new LineInfo(-1, "");
         }
     }
 

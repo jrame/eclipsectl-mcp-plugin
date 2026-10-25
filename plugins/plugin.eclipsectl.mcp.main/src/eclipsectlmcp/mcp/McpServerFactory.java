@@ -81,7 +81,7 @@ public class McpServerFactory
         }
         catch ( Exception e )
         {
-            logger.error( e.getMessage(), e );
+            if (logger != null) logger.error( e.getMessage(), e );
             return createErrorResult( e );
         }
     }
@@ -95,11 +95,13 @@ public class McpServerFactory
      */
     private CallToolResult createTextCallToolResult( Object result )
     {
+        ToolExecution.Result execution = result instanceof ToolExecution.Result explicit
+                ? explicit : new ToolExecution.Result(result, false);
         // TODO: support other content types
         var content = new McpSchema.TextContent( 
                 new McpSchema.Annotations( List.of( McpSchema.Role.ASSISTANT ), 0.0 ),
-                Optional.ofNullable( result ).map( Object::toString ).orElse( "" ) );
-        return McpSchema.CallToolResult.builder().addContent( content ).isError( false ).build();
+                Optional.ofNullable( execution.value() ).map( Object::toString ).orElse( "" ) );
+        return McpSchema.CallToolResult.builder().addContent( content ).isError( execution.isError() ).build();
     }
     
     public CallToolResult createErrorResult( Exception e )

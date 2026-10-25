@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -7,9 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
@@ -45,18 +44,18 @@ public class ProjectPropertiesService {
     public String getProjectProperties(String projectName)
     {
         if (projectName == null || projectName.isEmpty()) {
-            return "Error: Project name cannot be null or empty.";
+            return ToolExecution.error("Error: Project name cannot be null or empty.");
         }
         try
         {
             // Get the project
             IProject project = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName);
             if (project == null || !project.exists()) {
-                return "Error: Project '" + projectName + "' not found.";
+                return ToolExecution.error("Error: Project '" + projectName + "' not found.");
             }
 
             if (!project.isOpen()) {
-                return "Error: Project '" + projectName + "' is closed.";
+                return ToolExecution.error("Error: Project '" + projectName + "' is closed.");
             }
 
             StringBuilder result = new StringBuilder();
@@ -81,16 +80,10 @@ public class ProjectPropertiesService {
                 appendCProjectProperties(project, result);
             }
 
-            // Handle Python projects
-            if (project.hasNature("org.python.pydev.pythonNature")) {
-                appendPythonProjectProperties(project, result);
-            }
-
             // If the project doesn't match any of the specific natures, show generic properties
             if (!project.hasNature(JavaCore.NATURE_ID) &&
                 !project.hasNature("org.eclipse.cdt.core.cnature") &&
-                !project.hasNature("org.eclipse.cdt.core.ccnature") &&
-                !project.hasNature("org.python.pydev.pythonNature")) {
+                !project.hasNature("org.eclipse.cdt.core.ccnature")) {
                 appendGenericProjectProperties(project, result);
             }
 
@@ -98,7 +91,7 @@ public class ProjectPropertiesService {
 
         } catch (CoreException e) {
             logger.error(e.getMessage(), e);
-            return "Error retrieving project properties: " + e.getMessage();
+            return ToolExecution.error("Error retrieving project properties: " + e.getMessage());
         }
     }
 
@@ -189,7 +182,7 @@ public class ProjectPropertiesService {
 
         } catch (JavaModelException e) {
             logger.error(e.getMessage(), e);
-            result.append("Error retrieving Java project properties: ").append(e.getMessage()).append("\n");
+            result.append(ToolExecution.error("Error retrieving Java project properties: ")).append(e.getMessage()).append("\n");
         }
     }
 
@@ -276,122 +269,7 @@ public class ProjectPropertiesService {
 
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            result.append("Error retrieving C/C++ project properties: ").append(e.getMessage()).append("\n");
-        }
-    }
-
-    /**
-     * Appends Python project specific properties to the result.
-     *
-     * @param project The Python project to analyze
-     * @param result The StringBuilder to append results to
-     */
-    private void appendPythonProjectProperties(IProject project, StringBuilder result) {
-        result.append("## Python Project Properties\n\n");
-
-        try {
-            // Check for PyDev properties
-            IResource pydevProps = project.findMember(".pydevproject");
-
-            if (pydevProps instanceof IFile) {
-                IFile pydevFile = (IFile) pydevProps;
-                try (InputStream is = pydevFile.getContents()) {
-                    // Parse the XML content
-                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                    DocumentBuilder builder = factory.newDocumentBuilder();
-                    org.w3c.dom.Document doc = builder.parse(is);
-
-                    // Get Python interpreter
-                    result.append("### Python Interpreter\n");
-                    org.w3c.dom.NodeList interpreterNodes = doc.getElementsByTagName("pydev_property");
-                    boolean foundInterpreter = false;
-
-                    for (int i = 0; i < interpreterNodes.getLength(); i++) {
-                        org.w3c.dom.Node node = interpreterNodes.item(i);
-                        if (node.getAttributes().getNamedItem("name") != null &&
-                            "org.python.pydev.PYTHON_PROJECT_INTERPRETER".equals(
-                                node.getAttributes().getNamedItem("name").getNodeValue())) {
-                            result.append("- ").append(node.getTextContent()).append("\n\n");
-                            foundInterpreter = true;
-                            break;
-                        }
-                    }
-
-                    if (!foundInterpreter) {
-                        result.append("- Default interpreter\n\n");
-                    }
-
-                    // Get Python version
-                    result.append("### Python Version\n");
-                    boolean foundVersion = false;
-
-                    for (int i = 0; i < interpreterNodes.getLength(); i++) {
-                        org.w3c.dom.Node node = interpreterNodes.item(i);
-                        if (node.getAttributes().getNamedItem("name") != null &&
-                            "org.python.pydev.PYTHON_PROJECT_VERSION".equals(
-                                node.getAttributes().getNamedItem("name").getNodeValue())) {
-                            result.append("- ").append(node.getTextContent()).append("\n\n");
-                            foundVersion = true;
-                            break;
-                        }
-                    }
-
-                    if (!foundVersion) {
-                        result.append("- Not specified\n\n");
-                    }
-
-                    // Get source paths
-                    result.append("### Source Paths\n");
-                    org.w3c.dom.NodeList sourcePathNodes = doc.getElementsByTagName("path");
-                    boolean foundSourcePaths = false;
-
-                    for (int i = 0; i < sourcePathNodes.getLength(); i++) {
-                        org.w3c.dom.Node node = sourcePathNodes.item(i);
-                        result.append("- ").append(node.getTextContent()).append("\n");
-                        foundSourcePaths = true;
-                    }
-
-                    if (!foundSourcePaths) {
-                        result.append("- Default source path (project root)\n");
-                    }
-
-                } catch (Exception e) {
-                    logger.error(e.getMessage(), e);
-                    result.append("Error parsing PyDev project file: ").append(e.getMessage()).append("\n");
-                }
-            } else {
-                result.append("PyDev project file not found. Basic Python project.\n");
-            }
-
-            // Check for requirements.txt or setup.py
-            IResource requirementsFile = project.findMember("requirements.txt");
-            IResource setupFile = project.findMember("setup.py");
-
-            result.append("\n### Dependencies\n");
-            if (requirementsFile instanceof IFile) {
-                result.append("- Project uses requirements.txt for dependency management\n");
-            } else if (setupFile instanceof IFile) {
-                result.append("- Project uses setup.py for packaging and dependency management\n");
-            } else {
-                result.append("- No standard dependency management files detected\n");
-            }
-
-            // Check for virtual environment
-            IResource venvDir = project.findMember("venv");
-            IResource env = project.findMember(".env");
-
-            result.append("\n### Virtual Environment\n");
-            if (venvDir != null && venvDir.getType() == IResource.FOLDER) {
-                result.append("- Project contains a 'venv' virtual environment directory\n");
-            } else if (env != null && env.getType() == IResource.FOLDER) {
-                result.append("- Project contains a '.env' virtual environment directory\n");
-            } else {
-                result.append("- No virtual environment directory detected in project root\n");
-            }
-
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            result.append("Error retrieving Python project properties: ").append(e.getMessage()).append("\n");
+            result.append(ToolExecution.error("Error retrieving C/C++ project properties: ")).append(e.getMessage()).append("\n");
         }
     }
 
@@ -484,7 +362,7 @@ public class ProjectPropertiesService {
 
         } catch (CoreException e) {
             logger.error(e.getMessage(), e);
-            result.append("Error retrieving generic project properties: ").append(e.getMessage()).append("\n");
+            result.append(ToolExecution.error("Error retrieving generic project properties: ")).append(e.getMessage()).append("\n");
         }
     }
 

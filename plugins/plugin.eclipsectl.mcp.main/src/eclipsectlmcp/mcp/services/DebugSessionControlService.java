@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,8 +43,8 @@ public class DebugSessionControlService extends DebugServiceBase {
 				}
 
 				if (targetConfig == null) {
-					return "Error: Debug configuration '" + configName + "' not found. " +
-							"Use listRunConfigurations to see available configurations.";
+					return ToolExecution.error("Error: Debug configuration '" + configName + "' not found. " +
+							"Use listRunConfigurations to see available configurations.");
 				}
 
 				ILaunch launch = targetConfig.launch(ILaunchManager.DEBUG_MODE, null);
@@ -70,7 +72,7 @@ public class DebugSessionControlService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error launching debug configuration", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -117,7 +119,7 @@ public class DebugSessionControlService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error listing run configurations", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -131,16 +133,16 @@ public class DebugSessionControlService extends DebugServiceBase {
 			return uiSync.syncCall(() -> {
 				IDebugTarget debugTarget = getActiveDebugTarget();
 				if (debugTarget == null) {
-					return "Error: No active debug session. Please launch a debug configuration first.";
+					return ToolExecution.error("Error: No active debug session. Please launch a debug configuration first.");
 				}
 
 				IThread suspendedThread = getSuspendedThread(debugTarget);
 				if (suspendedThread == null) {
-					return "Error: Debug session is not suspended. Set a breakpoint or suspend execution first.";
+					return ToolExecution.error("Error: Debug session is not suspended. Set a breakpoint or suspend execution first.");
 				}
 
 				if (!suspendedThread.canStepInto()) {
-					return "Error: Cannot step into at current location.";
+					return ToolExecution.error("Error: Cannot step into at current location.");
 				}
 
 				suspendedThread.stepInto();
@@ -148,7 +150,7 @@ public class DebugSessionControlService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error stepping into", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -162,16 +164,16 @@ public class DebugSessionControlService extends DebugServiceBase {
 			return uiSync.syncCall(() -> {
 				IDebugTarget debugTarget = getActiveDebugTarget();
 				if (debugTarget == null) {
-					return "Error: No active debug session. Please launch a debug configuration first.";
+					return ToolExecution.error("Error: No active debug session. Please launch a debug configuration first.");
 				}
 
 				IThread suspendedThread = getSuspendedThread(debugTarget);
 				if (suspendedThread == null) {
-					return "Error: Debug session is not suspended. Set a breakpoint or suspend execution first.";
+					return ToolExecution.error("Error: Debug session is not suspended. Set a breakpoint or suspend execution first.");
 				}
 
 				if (!suspendedThread.canStepOver()) {
-					return "Error: Cannot step over at current location.";
+					return ToolExecution.error("Error: Cannot step over at current location.");
 				}
 
 				suspendedThread.stepOver();
@@ -179,7 +181,7 @@ public class DebugSessionControlService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error stepping over", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -193,16 +195,16 @@ public class DebugSessionControlService extends DebugServiceBase {
 			return uiSync.syncCall(() -> {
 				IDebugTarget debugTarget = getActiveDebugTarget();
 				if (debugTarget == null) {
-					return "Error: No active debug session. Please launch a debug configuration first.";
+					return ToolExecution.error("Error: No active debug session. Please launch a debug configuration first.");
 				}
 
 				IThread suspendedThread = getSuspendedThread(debugTarget);
 				if (suspendedThread == null) {
-					return "Error: Debug session is not suspended. Set a breakpoint or suspend execution first.";
+					return ToolExecution.error("Error: Debug session is not suspended. Set a breakpoint or suspend execution first.");
 				}
 
 				if (!suspendedThread.canStepReturn()) {
-					return "Error: Cannot step return at current location.";
+					return ToolExecution.error("Error: Cannot step return at current location.");
 				}
 
 				suspendedThread.stepReturn();
@@ -210,7 +212,7 @@ public class DebugSessionControlService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error stepping return", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -224,11 +226,11 @@ public class DebugSessionControlService extends DebugServiceBase {
 			return uiSync.syncCall(() -> {
 				IDebugTarget debugTarget = getActiveDebugTarget();
 				if (debugTarget == null) {
-					return "Error: No active debug session. Please launch a debug configuration first.";
+					return ToolExecution.error("Error: No active debug session. Please launch a debug configuration first.");
 				}
 
 				if (!debugTarget.canResume()) {
-					return "Error: Debug session cannot be resumed (may already be running).";
+					return ToolExecution.error("Error: Debug session cannot be resumed (may already be running).");
 				}
 
 				debugTarget.resume();
@@ -236,7 +238,7 @@ public class DebugSessionControlService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error resuming", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -250,11 +252,11 @@ public class DebugSessionControlService extends DebugServiceBase {
 			return uiSync.syncCall(() -> {
 				IDebugTarget debugTarget = getActiveDebugTarget();
 				if (debugTarget == null) {
-					return "Error: No active debug session. Please launch a debug configuration first.";
+					return ToolExecution.error("Error: No active debug session. Please launch a debug configuration first.");
 				}
 
 				if (!debugTarget.canSuspend()) {
-					return "Error: Debug session cannot be suspended (may already be suspended).";
+					return ToolExecution.error("Error: Debug session cannot be suspended (may already be suspended).");
 				}
 
 				debugTarget.suspend();
@@ -262,7 +264,7 @@ public class DebugSessionControlService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error suspending", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -276,12 +278,12 @@ public class DebugSessionControlService extends DebugServiceBase {
 			return uiSync.syncCall(() -> {
 				IDebugTarget debugTarget = getActiveDebugTarget();
 				if (debugTarget == null) {
-					return "Error: No active debug session to terminate.";
+					return ToolExecution.error("Error: No active debug session to terminate.");
 				}
 
 				ILaunch activeLaunch = debugTarget.getLaunch();
 				if (activeLaunch == null || !activeLaunch.canTerminate()) {
-					return "Error: Debug session cannot be terminated.";
+					return ToolExecution.error("Error: Debug session cannot be terminated.");
 				}
 
 				String sessionName = activeLaunch.getLaunchConfiguration() != null ?
@@ -292,7 +294,7 @@ public class DebugSessionControlService extends DebugServiceBase {
 			});
 		} catch (Exception e) {
 			logger.error("Error terminating", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 }

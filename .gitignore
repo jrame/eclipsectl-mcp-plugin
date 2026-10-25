@@ -1,11 +1,10 @@
 bin/
-/.venv
+*.class
 *.jar
 /.agents
 /.claude
 /.codex
 /.config
-/.github
 /.opencode
 /.settings
 /.tmp-launch-config-compile
@@ -13,3 +12,21 @@ bin/
 /.project
 /AGENTS.md
 /CLAUDE.md
+
+**/target/
+/tmp-*/
+/.github/*
+!/.github/workflows/
+/.github/workflows/*
+!/.github/workflows/build.yml
+
+/build/*.log
+**/.tycho-consumer-pom.xml
+
+# Generated Eclipse update-site files; site/site.xml remains a tracked PDE descriptor.
+/site/artifacts.*
+/site/content.*
+/site/p2.index
+/site/features/
+/site/plugins/
+/*.log

@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -122,7 +124,7 @@ public class FileUtilityService extends CodeEditingServiceBase
 					result.append("Refreshed ").append(type).append(": ").append(project.getProject().getName())
 						.append("/").append(resource.getProjectRelativePath()).append("\n");
 				} catch (Exception e) {
-					result.append("Error refreshing ").append(filePath)
+					result.append(ToolExecution.error("Error refreshing ")).append(filePath)
 						.append(" in ").append(project.getProject().getName())
 						.append(": ").append(e.getMessage()).append("\n");
 				}
@@ -168,11 +170,11 @@ public class FileUtilityService extends CodeEditingServiceBase
                             result.append("OK: ").append(thePath).append("\n");
                         }
                     } catch (Exception e) {
-                        result.append("Error saving ").append(thePath).append(": ").append(e.getMessage()).append("\n");
+                        result.append(ToolExecution.error("Error saving ")).append(thePath).append(": ").append(e.getMessage()).append("\n");
                     }
                 });
             } catch (Exception e) {
-                result.append("Error: ").append(filePath).append(": ").append(e.getMessage()).append("\n");
+                result.append(ToolExecution.error("Error: ")).append(filePath).append(": ").append(e.getMessage()).append("\n");
             }
         }
         return result.length() == 0 ? "No files processed" : result.toString();

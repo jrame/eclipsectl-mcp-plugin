@@ -8,6 +8,7 @@ Export-Package: eclipsectlmcp.mcp.services,
  eclipsectlmcp.tools
 Fragment-Host: eclipsectlmcp.plugin.main
 Require-Bundle: junit-jupiter-api,
+ org.opentest4j,
  org.eclipse.jdt.core,
  org.eclipse.jdt.launching,
  slf4j.api

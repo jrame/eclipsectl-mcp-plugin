@@ -1,0 +1,63 @@
+name: Build and publish Eclipse update site
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    timeout-minutes: 30
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Verify generated MCP catalogue and generator fixtures
+        run: |
+          java scripts/GenerateToolCatalog.java --check
+          java scripts/TestToolCatalog.java
+      - name: Download published embedded dependencies
+        run: bash ./mvnw -B -f build/dependencies/pom.xml validate
+      - name: Compile, run PDE tests, and assemble p2 repository
+        run: xvfb-run -a bash ./mvnw -B clean verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eclipsectl-update-site
+          path: repository/target/repository/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: tests/plugin.eclipsectl.mcp.main.tests/target/surefire-reports/
+          if-no-files-found: warn
+  publish:
+    timeout-minutes: 10
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: eclipsectl-update-site
+          path: deploy
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: deploy
+      - uses: actions/deploy-pages@v4
+        id: deployment

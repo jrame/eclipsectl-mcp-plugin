@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -218,7 +220,7 @@ public class UnitTestService {
                     }
                 }
             } catch (Exception e) {
-                results.append("Error: ").append(e.getMessage()).append("\n\n");
+                results.append(ToolExecution.error("Error: ")).append(e.getMessage()).append("\n\n");
             }
         }
 
@@ -495,11 +497,11 @@ public class UnitTestService {
                 boolean completed = latch.await(timeout, TimeUnit.SECONDS);
                 
                 if (!completed) {
-                    return "Error: Test execution timed out after " + timeout + " seconds.";
+                    return ToolExecution.error("Error: Test execution timed out after " + timeout + " seconds.");
                 }
                 
                 if (testRunResults[0] == null) {
-                    return "Error: No test results collected. The test run may have failed to start.";
+                    return ToolExecution.error("Error: No test results collected. The test run may have failed to start.");
                 }
                 
                 return testRunResults[0].toString();
@@ -510,7 +512,7 @@ public class UnitTestService {
             
         } catch (Exception e) {
             logger.error("Error running tests", e);
-            return "Error running tests: " + e.getMessage();
+            return ToolExecution.error("Error running tests: " + e.getMessage());
         }
     }
     

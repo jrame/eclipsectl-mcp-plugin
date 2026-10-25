@@ -10,6 +10,7 @@ import org.eclipse.e4.core.di.annotations.Creatable;
 import org.eclipse.e4.ui.di.UISynchronize;
 
 import jakarta.inject.Inject;
+import eclipsectlmcp.mcp.ToolExecution;
 
 @Creatable
 public class UISynchronizeCallable 
@@ -21,18 +22,18 @@ public class UISynchronizeCallable
 	
     public void syncExec(Runnable runnable) 
     {
-		uiSync.syncExec(runnable);
+		uiSync.syncExec(ToolExecution.propagate(runnable));
 	}
 
 	public void asyncExec(Runnable runnable) 
 	{
-		uiSync.asyncExec(runnable);
+		uiSync.asyncExec(ToolExecution.propagate(runnable));
 	}
 
 	public <T> Future<T> asyncCall(Callable<T> callable )
 	{
         CompletableFuture<T> future = new CompletableFuture<>();
-        uiSync.asyncExec(() -> {
+        uiSync.asyncExec(ToolExecution.propagate(() -> {
             try 
             {
                 T result = callable.call();
@@ -42,7 +43,7 @@ public class UISynchronizeCallable
             {
                 future.completeExceptionally(e);
             }
-        });
+        }));
         return future;
 	}
 
@@ -57,7 +58,7 @@ public class UISynchronizeCallable
         AtomicReference<T> result = new AtomicReference<T>();
         AtomicReference<Exception> exception = new AtomicReference<Exception>();
         
-        uiSync.syncExec(() -> {
+        uiSync.syncExec(ToolExecution.propagate(() -> {
             try 
             {
                 result.set( callable.call() );
@@ -66,7 +67,7 @@ public class UISynchronizeCallable
             {
                 exception.set(e);
             }
-        });
+        }));
         if (Objects.nonNull(exception.get())) 
         {
         	Exception e = exception.get();

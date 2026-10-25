@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -76,7 +78,7 @@ public class LaunchConfigurationService {
 					appendSystemEnvironment, nameConflict, configurationType));
 		} catch (Exception e) {
 			logger.log(Status.error("Error creating launch configuration", e));
-			return "Error: " + errorMessage(e);
+			return ToolExecution.error("Error: " + errorMessage(e));
 		}
 	}
 
@@ -88,14 +90,14 @@ public class LaunchConfigurationService {
 			return uiSync.syncCall(() -> {
 				ILaunchConfiguration config = findConfiguration(configName);
 				if (config == null) {
-					return "Error: Launch configuration '" + safe(configName) + "' not found. "
-							+ "Use listRunConfigurations to see available configurations.";
+					return ToolExecution.error("Error: Launch configuration '" + safe(configName) + "' not found. "
+							+ "Use listRunConfigurations to see available configurations.");
 				}
 				return formatConfiguration(config, Boolean.TRUE.equals(includeEnvironmentValues));
 			});
 		} catch (Exception e) {
 			logger.log(Status.error("Error reading launch configuration", e));
-			return "Error: " + errorMessage(e);
+			return ToolExecution.error("Error: " + errorMessage(e));
 		}
 	}
 
@@ -109,7 +111,7 @@ public class LaunchConfigurationService {
 					removeVariables, updateMode, appendSystemEnvironment));
 		} catch (Exception e) {
 			logger.log(Status.error("Error updating launch environment", e));
-			return "Error: " + errorMessage(e);
+			return ToolExecution.error("Error: " + errorMessage(e));
 		}
 	}
 
@@ -141,8 +143,8 @@ public class LaunchConfigurationService {
 		} else {
 			launchManager.isValidLaunchConfigurationName(requestedName);
 			if (launchManager.isExistingLaunchConfigurationName(requestedName)) {
-				return "Error: Launch configuration '" + requestedName + "' already exists. "
-						+ "Use nameConflict='generate' to create a uniquely named configuration.";
+				return ToolExecution.error("Error: Launch configuration '" + requestedName + "' already exists. "
+						+ "Use nameConflict='generate' to create a uniquely named configuration.");
 			}
 			effectiveName = requestedName;
 		}
@@ -201,10 +203,10 @@ public class LaunchConfigurationService {
 
 	private String unavailableTypeMessage(LaunchConfigurationKind kind) {
 		if (kind == LaunchConfigurationKind.TESTNG) {
-			return "Error: TestNG launch configuration type is not available. "
-					+ "Install the TestNG Eclipse plugin and restart Eclipse.";
+			return ToolExecution.error("Error: TestNG launch configuration type is not available. "
+					+ "Install the TestNG Eclipse plugin and restart Eclipse.");
 		}
-		return "Error: " + kind.displayName() + " launch configuration type is not available.";
+		return ToolExecution.error("Error: " + kind.displayName() + " launch configuration type is not available.");
 	}
 
 	private void configureTarget(ILaunchConfigurationWorkingCopy workingCopy, LaunchTarget target,
@@ -236,22 +238,22 @@ public class LaunchConfigurationService {
 			List<String> removeVariables, String updateMode, Boolean appendSystemEnvironment) throws CoreException {
 		ILaunchConfiguration config = findConfiguration(configName);
 		if (config == null) {
-			return "Error: Launch configuration '" + safe(configName) + "' not found. "
-					+ "Use listRunConfigurations to see available configurations.";
+			return ToolExecution.error("Error: Launch configuration '" + safe(configName) + "' not found. "
+					+ "Use listRunConfigurations to see available configurations.");
 		}
 
 		String mode = normalizeChoice(updateMode, UPDATE_MERGE, UPDATE_MERGE, UPDATE_REPLACE);
 		validateEnvironmentVariables(variables);
 		List<String> removals = normalizeRemovals(removeVariables);
 		if (UPDATE_REPLACE.equals(mode) && !removals.isEmpty()) {
-			return "Error: removeVariables cannot be combined with updateMode='replace'. "
-					+ "The replacement map already defines the complete environment.";
+			return ToolExecution.error("Error: removeVariables cannot be combined with updateMode='replace'. "
+					+ "The replacement map already defines the complete environment.");
 		}
 		if (variables == null && removals.isEmpty() && appendSystemEnvironment == null) {
-			return "Error: No environment changes specified.";
+			return ToolExecution.error("Error: No environment changes specified.");
 		}
 		if (UPDATE_REPLACE.equals(mode) && variables == null) {
-			return "Error: variables is required when updateMode='replace'. Use an empty object to clear all variables.";
+			return ToolExecution.error("Error: variables is required when updateMode='replace'. Use an empty object to clear all variables.");
 		}
 
 		Map<String, String> previous = config.getAttribute(ILaunchManager.ATTR_ENVIRONMENT_VARIABLES,

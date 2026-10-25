@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +49,7 @@ public class QuickFixService {
             // Find the file
             IFile file = ResourceUtilities.findFile(projectName, filePath);
             if (file == null || !file.exists()) {
-                return "Error: File not found: " + filePath;
+                return ToolExecution.error("Error: File not found: " + filePath);
             }
 
             // Find markers
@@ -106,7 +108,7 @@ public class QuickFixService {
             if (logger != null) {
                 logger.error("Error retrieving Quick Fixes", e);
             }
-            return "Error retrieving Quick Fixes: " + e.getMessage();
+            return ToolExecution.error("Error retrieving Quick Fixes: " + e.getMessage());
         }
     }
 
@@ -123,19 +125,19 @@ public class QuickFixService {
         try {
             // Validate input
             if (fixIndex < 1) {
-                return "Error: Fix index must be >= 1";
+                return ToolExecution.error("Error: Fix index must be >= 1");
             }
 
             // Find the file
             IFile file = ResourceUtilities.findFile(projectName, filePath);
             if (file == null || !file.exists()) {
-                return "Error: File not found: " + filePath;
+                return ToolExecution.error("Error: File not found: " + filePath);
             }
 
             // Find markers at the specified line
             List<IMarker> markers = findMarkers(file, lineNumber);
             if (markers.isEmpty()) {
-                return "Error: Quick Fix not found - no problems at line " + lineNumber + " in file: " + filePath;
+                return ToolExecution.error("Error: Quick Fix not found - no problems at line " + lineNumber + " in file: " + filePath);
             }
 
             // Collect all resolutions and find the one at the specified index
@@ -165,9 +167,9 @@ public class QuickFixService {
 
             if (targetResolution == null) {
                 if (currentIndex == 1) {
-                    return "Error: Quick Fix index " + fixIndex + " not found - no Quick Fixes available at line " + lineNumber + " in file: " + filePath;
+                    return ToolExecution.error("Error: Quick Fix index " + fixIndex + " not found - no Quick Fixes available at line " + lineNumber + " in file: " + filePath);
                 }
-                return "Error: Quick Fix index " + fixIndex + " not found. Available indices: 1-" + (currentIndex - 1);
+                return ToolExecution.error("Error: Quick Fix index " + fixIndex + " not found. Available indices: 1-" + (currentIndex - 1));
             }
 
             // Apply the Quick Fix
@@ -187,7 +189,7 @@ public class QuickFixService {
             if (logger != null) {
                 logger.error("Error applying Quick Fix", e);
             }
-            return "Error: Quick Fix not found - " + e.getMessage();
+            return ToolExecution.error("Error: Quick Fix not found - " + e.getMessage());
         }
     }
 

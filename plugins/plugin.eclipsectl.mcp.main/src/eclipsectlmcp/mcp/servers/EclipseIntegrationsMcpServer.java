@@ -17,6 +17,8 @@ import eclipsectlmcp.mcp.services.EditorService;
 import eclipsectlmcp.mcp.services.JavaDocService;
 import eclipsectlmcp.mcp.services.MavenService;
 import eclipsectlmcp.mcp.services.ProjectService;
+import eclipsectlmcp.mcp.services.WorkspaceStateService;
+import eclipsectlmcp.mcp.services.WorkspaceBuildService;
 import eclipsectlmcp.mcp.services.ResourceService;
 import eclipsectlmcp.mcp.services.SearchService;
 import eclipsectlmcp.mcp.services.UnitTestService;
@@ -103,7 +105,7 @@ public class EclipseIntegrationsMcpServer
         return resourceService.readProjectResource(projectName, resourcePath);
     }
 
-    @Tool(name = "listProjects", description = "List all available projects in the workspace with their detected natures (Java, C/C++, Python, etc.).", type = "object")
+    @Tool(name = "listProjects", description = "List all available projects in the workspace with their detected natures (Java, C/C++, etc.).", type = "object")
     public String listProjects()
     {
         return projectService.listProjects();
@@ -343,6 +345,26 @@ public class EclipseIntegrationsMcpServer
 
     // Workspace Info
 
+    @Inject
+    private WorkspaceBuildService workspaceBuildService;
+
+    @Tool(name = "buildProjects", description = "Run an Eclipse incremental or full build and wait for completion. Builds requested projects and their dependencies, plus dependent projects by default. Returns per-project error/warning counts and problem locations. Timeout includes scheduling wait and requests cancellation; incomplete builds are errors. Compiles saved resources, not unsaved editor changes.", type = "object")
+    public String buildProjects(
+            @ToolParam(name = "projectNames", description = "Comma-separated project names; omitted builds all open projects", required = false) String projectNames,
+            @ToolParam(name = "buildKind", description = "incremental (default) or full", required = false) String buildKind,
+            @ToolParam(name = "includeDependents", description = "Also build projects transitively referencing the requested projects (default: true)", required = false, type = "boolean") Boolean includeDependents,
+            @ToolParam(name = "timeoutSeconds", description = "Maximum wait including scheduling, from 1 to 3600 seconds (default: 120)", required = false, type = "integer") Integer timeoutSeconds,
+            @ToolParam(name = "maxProblems", description = "Maximum problem details, from 1 to 500 (default: 100); totals are always complete", required = false, type = "integer") Integer maxProblems) {
+        return workspaceBuildService.buildProjects(projectNames, buildKind, includeDependents, timeoutSeconds, maxProblems);
+    }
+
+    @Inject
+    private WorkspaceStateService workspaceStateService;
+
+    @Tool(name = "getWorkspaceState", description = "Read workspace and auto/manual build job state. Includes running/waiting jobs and delayed builds; excludes unrelated sleeping maintenance jobs. Does not start a build.", type = "object")
+    public String getWorkspaceState() {
+        return workspaceStateService.getWorkspaceState();
+    }
     @Tool(name = "getWorkspaceInfo",
           description = "Gets workspace information including location, project counts, Java version, and Eclipse product info.",
           type = "object")

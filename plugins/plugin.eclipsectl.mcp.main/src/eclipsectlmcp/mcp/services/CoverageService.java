@@ -1,5 +1,7 @@
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,7 +56,7 @@ public class CoverageService {
 	public String runCoverage(String configName, boolean waitForCompletion) {
 		try {
 			if (!isEclEmmaAvailable()) {
-				return "Error: EclEmma plugin is not installed. Please install EclEmma (Eclipse Code Coverage) to use coverage features.";
+				return ToolExecution.error("Error: EclEmma plugin is not installed. Please install EclEmma (Eclipse Code Coverage) to use coverage features.");
 			}
 
 			return uiSync.syncCall(() -> {
@@ -70,8 +72,8 @@ public class CoverageService {
 					}
 
 					if (targetConfig == null) {
-						return "Error: Launch configuration '" + configName + "' not found. "
-								+ "Use listDebugConfigurations to see available configurations.";
+						return ToolExecution.error("Error: Launch configuration '" + configName + "' not found. "
+								+ "Use listDebugConfigurations to see available configurations.");
 					}
 
 					ILaunch launch = targetConfig.launch("coverage", null);
@@ -100,12 +102,12 @@ public class CoverageService {
 
 				} catch (Exception e) {
 					logger.error("Error launching with coverage", e);
-					return "Error: " + e.getMessage();
+					return ToolExecution.error("Error: " + e.getMessage());
 				}
 			});
 		} catch (Exception e) {
 			logger.error("Error launching with coverage", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -117,7 +119,7 @@ public class CoverageService {
 	public String getCoverageReport() {
 		try {
 			if (!isEclEmmaAvailable()) {
-				return "Error: EclEmma plugin is not installed. Please install EclEmma (Eclipse Code Coverage) to use coverage features.";
+				return ToolExecution.error("Error: EclEmma plugin is not installed. Please install EclEmma (Eclipse Code Coverage) to use coverage features.");
 			}
 
 			return uiSync.syncCall(() -> {
@@ -128,7 +130,7 @@ public class CoverageService {
 							.invoke(sessionManager);
 
 					if (activeSession == null) {
-						return "Error: No active coverage session. Run runCoverage first to generate coverage data.";
+						return ToolExecution.error("Error: No active coverage session. Run runCoverage first to generate coverage data.");
 					}
 
 					String description = (String) activeSession.getClass().getMethod("getDescription")
@@ -154,15 +156,15 @@ public class CoverageService {
 					return sb.toString();
 
 				} catch (ClassNotFoundException e) {
-					return "Error: EclEmma classes not found. Ensure org.eclipse.eclemma.core is installed.";
+					return ToolExecution.error("Error: EclEmma classes not found. Ensure org.eclipse.eclemma.core is installed.");
 				} catch (Exception e) {
 					logger.error("Error getting coverage report", e);
-					return "Error: " + e.getMessage();
+					return ToolExecution.error("Error: " + e.getMessage());
 				}
 			});
 		} catch (Exception e) {
 			logger.error("Error getting coverage report", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 
@@ -177,11 +179,11 @@ public class CoverageService {
 	public String getClassCoverage(String className) {
 		try {
 			if (!isEclEmmaAvailable()) {
-				return "Error: EclEmma plugin is not installed. Please install EclEmma (Eclipse Code Coverage) to use coverage features.";
+				return ToolExecution.error("Error: EclEmma plugin is not installed. Please install EclEmma (Eclipse Code Coverage) to use coverage features.");
 			}
 
 			if (className == null || className.trim().isEmpty()) {
-				return "Error: className parameter is required";
+				return ToolExecution.error("Error: className parameter is required");
 			}
 
 			// Strip .java extension if present
@@ -248,15 +250,15 @@ public class CoverageService {
 					}
 
 					if (type == null) {
-						return "Error: Class not found: " + classNameToFind
-								+ ". Make sure the class exists and is in the workspace.";
+						return ToolExecution.error("Error: Class not found: " + classNameToFind
+								+ ". Make sure the class exists and is in the workspace.");
 					}
 
 					String resolvedFqn = type.getFullyQualifiedName();
 
 					ICompilationUnit cu = type.getCompilationUnit();
 					if (cu == null) {
-						return "Error: Compilation unit not found for class: " + resolvedFqn;
+						return ToolExecution.error("Error: Compilation unit not found for class: " + resolvedFqn);
 					}
 
 					String source = cu.getSource();
@@ -277,7 +279,7 @@ public class CoverageService {
 					Object activeSession = sessionManager.getClass().getMethod("getActiveSession").invoke(sessionManager);
 
 					if (activeSession == null) {
-						return "Error: No active coverage session. Run runCoverage first.";
+						return ToolExecution.error("Error: No active coverage session. Run runCoverage first.");
 					}
 
 					// Read execution data from session
@@ -297,8 +299,8 @@ public class CoverageService {
 					}
 
 					if (acceptMethod == null) {
-						return "Error: CoverageSession does not expose accept() method. "
-								+ "Session class: " + activeSession.getClass().getName();
+						return ToolExecution.error("Error: CoverageSession does not expose accept() method. "
+								+ "Session class: " + activeSession.getClass().getName());
 					}
 
 					acceptMethod.invoke(activeSession, execDataStore, sessionInfoStore);
@@ -317,7 +319,7 @@ public class CoverageService {
 					}
 
 					if (analyzer == null) {
-						return "Error: Could not create JaCoCo Analyzer.";
+						return ToolExecution.error("Error: Could not create JaCoCo Analyzer.");
 					}
 
 					// Find .class files in the project output folder
@@ -345,7 +347,7 @@ public class CoverageService {
 
 					if (classCoverage == null) {
 						StringBuilder debug = new StringBuilder();
-						debug.append("Error: No coverage data for class ").append(resolvedFqn).append(".\n");
+						debug.append(ToolExecution.error("Error: No coverage data for class ")).append(resolvedFqn).append(".\n");
 						debug.append("Searched for: ").append(jacocoClassName).append("\n");
 						debug.append("Available classes (").append(classes.size()).append("):\n");
 						for (Object cc : classes) {
@@ -359,15 +361,15 @@ public class CoverageService {
 					return formatAnnotatedSource(classCoverage, resolvedFqn, sourceLines, totalSourceLines);
 
 				} catch (ClassNotFoundException e) {
-					return "Error: EclEmma classes not found. Ensure org.eclipse.eclemma.core is installed.";
+					return ToolExecution.error("Error: EclEmma classes not found. Ensure org.eclipse.eclemma.core is installed.");
 				} catch (Exception e) {
 					logger.error("Error getting class coverage", e);
-					return "Error: " + e.getMessage();
+					return ToolExecution.error("Error: " + e.getMessage());
 				}
 			});
 		} catch (Exception e) {
 			logger.error("Error getting class coverage", e);
-			return "Error: " + e.getMessage();
+			return ToolExecution.error("Error: " + e.getMessage());
 		}
 	}
 

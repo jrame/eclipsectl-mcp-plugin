@@ -1,6 +1,8 @@
 
 package eclipsectlmcp.mcp.services;
 
+import eclipsectlmcp.mcp.ToolExecution;
+
 import java.util.Optional;
 
 import org.eclipse.core.resources.IFile;
@@ -70,7 +72,7 @@ public class EditorService
 	        } 
 	        catch (Exception e)
 	        {
-                return "Error: " + e.getMessage();
+                return ToolExecution.error("Error: " + e.getMessage());
 	        }
         });
     }
@@ -232,7 +234,6 @@ public class EditorService
                     case "java" -> "java";
                     case "js", "javascript" -> "javascript";
                     case "ts", "typescript" -> "typescript";
-                    case "py", "python" -> "python";
                     case "cpp", "cxx", "cc" -> "cpp";
                     case "c" -> "c";
                     case "cs" -> "csharp";
@@ -424,7 +425,7 @@ public class EditorService
                 IFile file = ResourceUtilities.findFile(projectName, filePath);
                 if (file == null || !file.exists())
                 {
-                    return "Error: File not found: " + filePath;
+                    return ToolExecution.error("Error: File not found: " + filePath);
                 }
 
                 IWorkbenchPage page = PlatformUI.getWorkbench()
@@ -455,7 +456,7 @@ public class EditorService
             }
             catch (Exception e)
             {
-                return "Error opening file: " + e.getMessage();
+                return ToolExecution.error("Error opening file: " + e.getMessage());
             }
         });
     }
@@ -518,7 +519,7 @@ public class EditorService
             }
             catch (Exception e)
             {
-                return "Error listing editors: " + e.getMessage();
+                return ToolExecution.error("Error listing editors: " + e.getMessage());
             }
         });
     }
