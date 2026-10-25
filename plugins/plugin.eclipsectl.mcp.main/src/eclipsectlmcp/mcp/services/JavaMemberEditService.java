@@ -313,6 +313,7 @@ public class JavaMemberEditService extends CodeEditingServiceBase {
             }
 
             String[] memberNames = members.split(",");
+            List<ISourceRange> ranges = new ArrayList<>();
             for (String memberName : memberNames) {
                 String name = memberName.trim();
                 if (name.isEmpty()) continue;
@@ -323,16 +324,17 @@ public class JavaMemberEditService extends CodeEditingServiceBase {
                             targetType.getElementName() + ".");
                 }
 
-                ISourceRange range = found.getSourceRange();
-                IDocument doc = new Document(cu.getSource());
-                doc.replace(range.getOffset(), range.getLength(), "");
-                cu.getBuffer().setContents(doc.get());
-                cu.save(new NullProgressMonitor(), true);
+                ranges.add(found.getSourceRange());
                 removed.add(name);
-
-                targetType = resolveTargetType(cu, className);
             }
 
+            IDocument doc = new Document(cu.getSource());
+            ranges.sort((left, right) -> Integer.compare(right.getOffset(), left.getOffset()));
+            for (ISourceRange range : ranges) {
+                doc.replace(range.getOffset(), range.getLength(), "");
+            }
+            cu.getBuffer().setContents(doc.get());
+            cu.save(new NullProgressMonitor(), true);
             cu.commitWorkingCopy(true, new NullProgressMonitor());
             cu.discardWorkingCopy();
 

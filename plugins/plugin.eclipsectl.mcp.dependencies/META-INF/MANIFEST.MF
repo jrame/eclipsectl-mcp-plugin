@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: eclipsectlmcp-dependencies
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Bundle-SymbolicName: eclipsectlmcp.plugin.dependencies;singleton:=true
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 1.0.1.qualifier
 Export-Package: com.fasterxml.jackson.annotation,
  com.fasterxml.jackson.core,
  com.fasterxml.jackson.core.type,
