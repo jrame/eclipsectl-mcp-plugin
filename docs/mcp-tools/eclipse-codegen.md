@@ -18,8 +18,8 @@ Input schema type: object.
 | filePath | string | String | Yes | The path to the Java file relative to the project root (e.g., 'src/com/example/User.java') or absolute path starting with /projectName/ |
 | className | string | String | No | The name of the class within the file. Optional if the file contains only one class. |
 | fieldNames | string | String | No | Comma-separated list of field names to generate methods for. If not specified, all fields will be processed. |
-| generateGetters | string | Boolean | No | Whether to generate getter methods. Defaults to true. |
-| generateSetters | string | Boolean | No | Whether to generate setter methods. Defaults to true. |
+| generateGetters | boolean | Boolean | No | Whether to generate getter methods. Defaults to true. |
+| generateSetters | boolean | Boolean | No | Whether to generate setter methods. Defaults to true. |
 | insertionPoint | string | String | No | Where to insert the generated methods: 'end' (default) to add at the end of the class, or a specific line number |
 
 ## generateToStringEqualsHashCode
@@ -34,9 +34,9 @@ Input schema type: object.
 | filePath | string | String | Yes | The path to the Java file relative to the project root (e.g., 'src/com/example/User.java') or absolute path starting with /projectName/ |
 | className | string | String | No | The name of the class within the file. Optional if the file contains only one class. |
 | fieldNames | string | String | No | Comma-separated list of field names to include in the generated methods. If not specified, all fields will be included. |
-| generateToString | string | Boolean | No | Whether to generate toString() method. Defaults to true. |
-| generateEquals | string | Boolean | No | Whether to generate equals() method. Defaults to true. |
-| generateHashCode | string | Boolean | No | Whether to generate hashCode() method. Defaults to true. |
+| generateToString | boolean | Boolean | No | Whether to generate toString() method. Defaults to true. |
+| generateEquals | boolean | Boolean | No | Whether to generate equals() method. Defaults to true. |
+| generateHashCode | boolean | Boolean | No | Whether to generate hashCode() method. Defaults to true. |
 
 ## implementOverrideMethods
 

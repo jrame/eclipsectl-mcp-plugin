@@ -13,6 +13,7 @@ import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.ILog;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
@@ -41,17 +42,17 @@ public class CoverageService {
 	private ILog logger;
 
 	@Inject
-	private UISynchronizeCallable uiSync;
+	UISynchronizeCallable uiSync;
 
 	@Inject
-	private LaunchLogService launchLogService;
+	LaunchLogService launchLogService;
 
 	/**
 	 * Launch a configuration with EclEmma coverage.
 	 *
 	 * @param configName Name of the launch configuration
 	 * @param waitForCompletion If true, waits for the process to terminate (max 120s)
-	 * @return Status message with log path
+	 * @return Status message with log path and, after a completed wait, JaCoCo export path
 	 */
 	public String runCoverage(String configName, boolean waitForCompletion) {
 		try {
@@ -59,56 +60,63 @@ public class CoverageService {
 				return ToolExecution.error("Error: EclEmma plugin is not installed. Please install EclEmma (Eclipse Code Coverage) to use coverage features.");
 			}
 
-			return uiSync.syncCall(() -> {
-				try {
-					ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
-
-					ILaunchConfiguration targetConfig = null;
-					for (ILaunchConfiguration config : launchManager.getLaunchConfigurations()) {
-						if (config.getName().equalsIgnoreCase(configName)) {
-							targetConfig = config;
-							break;
-						}
-					}
-
-					if (targetConfig == null) {
-						return ToolExecution.error("Error: Launch configuration '" + configName + "' not found. "
-								+ "Use listDebugConfigurations to see available configurations.");
-					}
-
-					ILaunch launch = targetConfig.launch("coverage", null);
-
-					String logPath = launchLogService.startLogging(launch, configName, "coverage");
-
-					if (waitForCompletion) {
-						LaunchLogService.TerminationResult result = launchLogService.waitForTermination(launch, 120_000);
-						if (result != null) {
-							return "Launch '" + configName + "' completed (coverage mode).\n" +
-									"Log: " + logPath + "\n" +
-									"Exit code: " + result.getExitCode() + "\n" +
-									"Duration: " + result.getDurationFormatted() + "\n" +
-									"Use getCoverageReport or getClassCoverage to view results.";
-						} else {
-							return "Launch '" + configName + "' timed out after 120s (coverage mode).\n" +
-									"Log: " + logPath + "\n" +
-									"Status: STILL RUNNING";
-						}
-					} else {
-						return "Launch '" + configName + "' started (coverage mode).\n" +
-								"Log: " + logPath + "\n" +
-								"Status: RUNNING\n" +
-								"Use getCoverageReport or getClassCoverage after completion to view results.";
-					}
-
-				} catch (Exception e) {
-					logger.error("Error launching with coverage", e);
-					return ToolExecution.error("Error: " + e.getMessage());
+			try (CoverageExport export = waitForCompletion ? captureCoverageExport() : null) {
+				ILaunch launch = uiSync.syncCall(() -> launchCoverageConfiguration(configName));
+				if (launch == null) {
+					return ToolExecution.error("Error: Launch configuration '" + configName + "' not found. "
+							+ "Use listDebugConfigurations to see available configurations.");
 				}
-			});
+
+				// TestNG connects its result receiver through queued UI work after launch.
+				// Keep logging and the completion wait outside the UI thread so it can connect.
+				String logPath = launchLogService.startLogging(launch, configName, "coverage");
+				if (waitForCompletion) {
+					LaunchLogService.TerminationResult result = launchLogService.waitForTermination(launch, 120_000);
+					if (result != null) {
+						String summary = "Launch '" + configName + "' completed (coverage mode).\n" +
+								"Log: " + logPath + "\n" +
+								"Exit code: " + result.getExitCode() + "\n" +
+								"Duration: " + result.getDurationFormatted() + "\n" +
+								"Use getCoverageReport or getClassCoverage to view results.";
+						try {
+							String exportPath = export.export(launch, configName);
+							return summary + LaunchTestSummary.describe(launch) + "\nCoverage session: " + exportPath;
+						} catch (Exception e) {
+							return ToolExecution.error(summary + LaunchTestSummary.describe(launch) + "\nCoverage export failed: " + e.getMessage());
+						}
+					}
+					return "Launch '" + configName + "' timed out after 120s (coverage mode).\n" +
+							"Log: " + logPath + "\n" +
+							"Status: STILL RUNNING" + LaunchTestSummary.describe(launch);
+				}
+				return "Launch '" + configName + "' started (coverage mode).\n" +
+						"Log: " + logPath + "\n" +
+						"Status: RUNNING\n" +
+						"Use getCoverageReport or getClassCoverage after completion to view results." + LaunchTestSummary.describe(launch);
+			}
 		} catch (Exception e) {
 			logger.error("Error launching with coverage", e);
 			return ToolExecution.error("Error: " + e.getMessage());
 		}
+	}
+
+	interface CoverageExport extends AutoCloseable {
+		String export(ILaunch launch, String configName) throws Exception;
+		@Override void close();
+	}
+
+	CoverageExport captureCoverageExport() {
+		return CoverageSessionExport.capture();
+	}
+
+	ILaunch launchCoverageConfiguration(String configName) throws CoreException {
+		ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
+		for (ILaunchConfiguration config : launchManager.getLaunchConfigurations()) {
+			if (config.getName().equalsIgnoreCase(configName)) {
+				return config.launch("coverage", null);
+			}
+		}
+		return null;
 	}
 
 	/**
@@ -507,7 +515,7 @@ public class CoverageService {
 	/**
 	 * Check if EclEmma plugin is available.
 	 */
-	private boolean isEclEmmaAvailable() {
+	boolean isEclEmmaAvailable() {
 		try {
 			Bundle bundle = FrameworkUtil.getBundle(this.getClass());
 			if (bundle != null) {

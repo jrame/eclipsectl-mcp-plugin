@@ -26,6 +26,15 @@ public class TestToolCatalog {
             require(page.contains("First &#124; line<br>quoted \"value\""), "concatenation and escaped strings");
             require(page.contains("| key | string | String | Yes | required |"), "default name/type/required");
             require(page.contains("| optional | integer | Integer | No | optional |"), "explicit optional parameter");
+            String contract = Files.readString(root.resolve("docs/mcp-tool-contract.json"));
+            require(contract.contains("\"javaType\":\"Integer\"") && contract.contains("\"type\":\"integer\""), "export Java-backed contract");
+            write(root, SOURCE + "servers/Fixture.java", SERVER.replace("type=\"integer\"", "type=\"string\""));
+            run(root, true, false, "Schema/Java type mismatch");
+            write(root, SOURCE + "servers/Fixture.java", SERVER.replace("Integer count", "Boolean count"));
+            run(root, true, false, "Schema/Java type mismatch");
+            write(root, SOURCE + "servers/Fixture.java", SERVER.replace("Integer count", "int count"));
+            run(root, true, false, "Primitive parameter must be required");
+            write(root, SOURCE + "servers/Fixture.java", SERVER);
             Map<String, byte[]> before = snapshot(root);
             run(root, false, true, null);
             Map<String, byte[]> after = snapshot(root);

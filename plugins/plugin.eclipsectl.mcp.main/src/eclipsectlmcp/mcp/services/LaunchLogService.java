@@ -22,7 +22,7 @@ import org.eclipse.e4.core.di.annotations.Creatable;
 import jakarta.inject.Inject;
 
 /**
- * Service that logs launch output (stdout/stderr) to files in a .logs/eclipse/ directory
+ * Service that logs launch output (stdout/stderr) to files in a .logs/eclipsectl/ directory
  * at the workspace root. Supports both async and sync (wait-for-completion) modes.
  */
 @Creatable
@@ -228,7 +228,7 @@ public class LaunchLogService {
 
 	private File getLogDirectory() {
 		File workspaceRoot = ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile();
-		File logDir = new File(workspaceRoot, ".logs/eclipse");
+		File logDir = new File(workspaceRoot, ".logs/eclipsectl");
 		if (!logDir.exists()) {
 			logDir.mkdirs();
 		}

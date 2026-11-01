@@ -3,6 +3,7 @@ package eclipsectlmcp.mcp;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -77,12 +78,40 @@ public class ToolExecutor
     public Object[] mapArguments( Method method, Map<String, Object> argMap )
     {
         return Arrays.stream( method.getParameters() )
-                    .map( ToolExecutor::toParamName )
-                    .map( argMap::get )
+                    .map( parameter -> mapArgument( parameter, argMap.get( toParamName( parameter ) ) ) )
                     .toArray();
         
     }
 
+    /** Accept native JSON scalars and legacy string clients without truncation. */
+    private static Object mapArgument( Parameter parameter, Object value )
+    {
+        Class<?> type = parameter.getType();
+        String name = toParamName(parameter);
+        if (value == null)
+        {
+            if (type.isPrimitive()) throw new IllegalArgumentException("Missing argument '" + name + "'");
+            return null;
+        }
+        if (type == Integer.class || type == int.class)
+        {
+            if (value instanceof Integer) return value;
+            if (value instanceof Number || value instanceof String)
+            {
+                try { return new BigDecimal(value.toString()).intValueExact(); }
+                catch (NumberFormatException | ArithmeticException e) { /* Report no argument values. */ }
+            }
+            throw new IllegalArgumentException("Argument '" + name + "' must be a 32-bit integer");
+        }
+        if (type == Boolean.class || type == boolean.class)
+        {
+            if (value instanceof Boolean) return value;
+            if (value instanceof String text && (text.equalsIgnoreCase("true") || text.equalsIgnoreCase("false")))
+                return Boolean.valueOf(text);
+            throw new IllegalArgumentException("Argument '" + name + "' must be a boolean");
+        }
+        return value;
+    }
     /**
      * Converts a String array of key-value pairs into a Map.
      * 

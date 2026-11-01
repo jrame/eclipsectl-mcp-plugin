@@ -52,10 +52,10 @@ public class EclipseDebugMcpServer {
 	)
 	public String addBreakpoint(
 			@ToolParam(name = "filePath", description = "Path to the file (relative or absolute)", required = true) String filePath,
-			@ToolParam(name = "lineNumber", description = "Line number (1-based)", required = true) int lineNumber,
-			@ToolParam(name = "projectName", description = "Optional project name for path resolution") String projectName,
-			@ToolParam(name = "condition", description = "Optional breakpoint condition expression (e.g., 'userId == null')") String condition,
-			@ToolParam(name = "hitCount", description = "Optional hit count (breakpoint triggers after N hits)") Integer hitCount) {
+			@ToolParam(name = "lineNumber", description = "Line number (1-based)", required = true, type="integer") int lineNumber,
+			@ToolParam(name = "projectName", description = "Optional project name for path resolution", required=false) String projectName,
+			@ToolParam(name = "condition", description = "Optional breakpoint condition expression (e.g., 'userId == null')", required=false) String condition,
+			@ToolParam(name = "hitCount", description = "Optional hit count (breakpoint triggers after N hits)", type="integer", required=false) Integer hitCount) {
 		return breakpointService.addBreakpoint(filePath, lineNumber, projectName, condition, hitCount);
 	}
 
@@ -65,8 +65,8 @@ public class EclipseDebugMcpServer {
 	)
 	public String removeBreakpoint(
 			@ToolParam(name = "filePath", description = "Path to the file", required = true) String filePath,
-			@ToolParam(name = "lineNumber", description = "Line number", required = true) int lineNumber,
-			@ToolParam(name = "projectName", description = "Optional project name") String projectName) {
+			@ToolParam(name = "lineNumber", description = "Line number", required = true, type="integer") int lineNumber,
+			@ToolParam(name = "projectName", description = "Optional project name", required=false) String projectName) {
 		return breakpointService.removeBreakpoint(filePath, lineNumber, projectName);
 	}
 
@@ -84,8 +84,8 @@ public class EclipseDebugMcpServer {
 	)
 	public String enableBreakpoint(
 			@ToolParam(name = "filePath", description = "Path to the file", required = true) String filePath,
-			@ToolParam(name = "lineNumber", description = "Line number", required = true) int lineNumber,
-			@ToolParam(name = "projectName", description = "Optional project name") String projectName) {
+			@ToolParam(name = "lineNumber", description = "Line number", required = true, type="integer") int lineNumber,
+			@ToolParam(name = "projectName", description = "Optional project name", required=false) String projectName) {
 		return breakpointService.enableBreakpoint(filePath, lineNumber, projectName);
 	}
 
@@ -95,8 +95,8 @@ public class EclipseDebugMcpServer {
 	)
 	public String disableBreakpoint(
 			@ToolParam(name = "filePath", description = "Path to the file", required = true) String filePath,
-			@ToolParam(name = "lineNumber", description = "Line number", required = true) int lineNumber,
-			@ToolParam(name = "projectName", description = "Optional project name") String projectName) {
+			@ToolParam(name = "lineNumber", description = "Line number", required = true, type="integer") int lineNumber,
+			@ToolParam(name = "projectName", description = "Optional project name", required=false) String projectName) {
 		return breakpointService.disableBreakpoint(filePath, lineNumber, projectName);
 	}
 
@@ -107,7 +107,7 @@ public class EclipseDebugMcpServer {
 		description = "List all threads in the debug session with their state (running/suspended/stepping), current location if suspended, and which thread is focused"
 	)
 	public String listThreads(
-			@ToolParam(name = "sessionName", description = "Optional debug session name (uses focused or first active session if omitted)") String sessionName) {
+			@ToolParam(name = "sessionName", description = "Optional debug session name (uses focused or first active session if omitted)", required=false) String sessionName) {
 		return contextService.listThreads(sessionName);
 	}
 
@@ -117,7 +117,7 @@ public class EclipseDebugMcpServer {
 	)
 	public String selectThread(
 			@ToolParam(name = "threadName", description = "Name of the thread to focus (e.g., 'main'). Empty to reset focus.", required = true) String threadName,
-			@ToolParam(name = "sessionName", description = "Optional debug session name") String sessionName) {
+			@ToolParam(name = "sessionName", description = "Optional debug session name", required=false) String sessionName) {
 		return contextService.selectThread(threadName, sessionName);
 	}
 
@@ -256,9 +256,9 @@ public class EclipseDebugMcpServer {
 		description = "Get the current stack trace with smart filtering to avoid overwhelming framework dumps"
 	)
 	public String getStackTrace(
-			@ToolParam(name = "maxDepth", description = "Maximum number of frames to return (default 10)") Integer maxDepth,
-			@ToolParam(name = "packageFilter", description = "Only include frames from matching packages (e.g., 'com.example')") String packageFilter,
-			@ToolParam(name = "skipFramework", description = "Skip framework packages like java.*, javax.*, org.eclipse.* (default true)") Boolean skipFramework) {
+			@ToolParam(name = "maxDepth", description = "Maximum number of frames to return (default 10)", type="integer", required=false) Integer maxDepth,
+			@ToolParam(name = "packageFilter", description = "Only include frames from matching packages (e.g., 'com.example')", required=false) String packageFilter,
+			@ToolParam(name = "skipFramework", description = "Skip framework packages like java.*, javax.*, org.eclipse.* (default true)", type="boolean", required=false) Boolean skipFramework) {
 		return inspectionService.getStackTrace(maxDepth, packageFilter, skipFramework);
 	}
 
@@ -267,7 +267,7 @@ public class EclipseDebugMcpServer {
 		description = "Get local variables from a stack frame with their names, types, and values"
 	)
 	public String getVariables(
-			@ToolParam(name = "stackFrameIndex", description = "Index of the stack frame (0 = top, default 0)") Integer stackFrameIndex) {
+			@ToolParam(name = "stackFrameIndex", description = "Index of the stack frame (0 = top, default 0)", type="integer", required=false) Integer stackFrameIndex) {
 		return inspectionService.getVariables(stackFrameIndex);
 	}
 
@@ -277,7 +277,7 @@ public class EclipseDebugMcpServer {
 	)
 	public String evaluateExpression(
 			@ToolParam(name = "expression", description = "Expression to evaluate", required = true) String expression,
-			@ToolParam(name = "stackFrameIndex", description = "Index of the stack frame (0 = top, default 0)") Integer stackFrameIndex) {
+			@ToolParam(name = "stackFrameIndex", description = "Index of the stack frame (0 = top, default 0)", type="integer", required=false) Integer stackFrameIndex) {
 		return inspectionService.evaluateExpression(expression, stackFrameIndex);
 	}
 

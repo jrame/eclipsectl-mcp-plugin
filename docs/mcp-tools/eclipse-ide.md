@@ -4,7 +4,7 @@
 
 [All servers](../mcp-tools.md)
 
-Version: 1.0.0. Tools: 31.
+Version: 1.0.0. Tools: 32.
 
 ## buildProjects
 
@@ -30,6 +30,19 @@ Input schema type: object.
 | --- | --- | --- | --- | --- |
 | projectName | string | String | Yes | The name of the project where directories will be created |
 | directoryPath | string | String | Yes | The directory path relative to the project root (e.g., 'src/com/example/newpackage') |
+
+## createJavaProject
+
+Create and open a new Java project using Eclipse JDT. Requires a nonexistent target and an existing parent directory. Uses the configured default JRE unless javaVersion is supplied; never downloads a JDK or overwrites files. Optional JUnit 5 uses test -&gt; bin-test.
+
+Input schema type: object.
+
+| Parameter | Schema type | Java type | Required | Description |
+| --- | --- | --- | --- | --- |
+| projectPath | string | String | Yes | Absolute project path on a supported filesystem; target must not exist |
+| projectName | string | String | No | Optional project name, defaults to directory name |
+| javaVersion | integer | Integer | No | Optional Java feature version (8 or newer); requires a compatible installed JRE |
+| junitVersion | string | String | No | Optional JUnit version: 5; omitted means no tests or dependency |
 
 ## fileSearch
 
@@ -95,7 +108,7 @@ Input schema type: object.
 | --- | --- | --- | --- | --- |
 | projectName | string | String | No | The name of the project to check (optional, if not specified checks all projects) |
 | severity | string | String | No | Filter by severity level: 'ERROR', 'WARNING', or 'ALL' (default: 'ALL') |
-| maxResults | string | Integer | No | Maximum number of problems to return (default: 100) |
+| maxResults | integer | Integer | No | Maximum number of problems to return (default: 50) |
 
 ## getConsoleOutput
 
@@ -107,7 +120,7 @@ Input schema type: object.
 | --- | --- | --- | --- | --- |
 | consoleName | string | String | No | Name of the specific console to retrieve (optional, leave empty for all or most recent console) |
 | maxLines | string | String | No | Maximum number of lines to retrieve (default: 100) |
-| includeAllConsoles | string | Boolean | No | Whether to include output from all available consoles (default: false) |
+| includeAllConsoles | boolean | Boolean | No | Whether to include output from all available consoles (default: false) |
 
 ## getCurrentlyOpenedFile
 
@@ -156,7 +169,7 @@ Input schema type: object.
 | fullyQualifiedClassName | string | String | Yes | The fully qualified name of the class containing the method |
 | methodName | string | String | Yes | The name of the method to analyze |
 | methodSignature | string | String | No | The signature of the method (optional) |
-| maxDepth | string | Integer | No | Maximum depth of the call hierarchy to retrieve (default: 3) |
+| maxDepth | integer | Integer | No | Maximum depth of the call hierarchy to retrieve (default: 3) |
 
 ## getOpenEditors
 

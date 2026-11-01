@@ -32,7 +32,7 @@ public class EclipseCoverageMcpServer {
 	)
 	public String runCoverage(
 			@ToolParam(name = "configName", description = "Name of the launch configuration to run with coverage", required = true) String configName,
-			@ToolParam(name = "waitForCompletion", description = "If true, waits for the process to terminate (max 120s). Default: false", required = false, type = "boolean") Boolean waitForCompletion) {
+			@ToolParam(name = "waitForCompletion", description = "If true, waits for termination (max 120s), then reports JUnit/TestNG test counts and exports the new JaCoCo .exec session to workspace .logs/eclipsectl (up to 15s for session availability). The output includes the absolute export path. Default: false", required = false, type = "boolean") Boolean waitForCompletion) {
 		return coverageService.runCoverage(configName, waitForCompletion != null && waitForCompletion);
 	}
 

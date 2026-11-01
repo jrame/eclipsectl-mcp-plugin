@@ -16,8 +16,8 @@ Input schema type: object.
 | --- | --- | --- | --- | --- |
 | projectName | string | String | No | The name of the project containing the file. Optional if file path is unique across projects or starts with /projectName/ |
 | filePath | string | String | Yes | The path to the file relative to the project root (e.g., 'src/com/example/Main.java') or absolute path starting with /projectName/ |
-| lineNumber | string | int | Yes | The line number where the problem is located (1-based index) |
-| fixIndex | string | int | Yes | The index of the Quick Fix to apply (1-based, from getQuickFixes output) |
+| lineNumber | integer | int | Yes | The line number where the problem is located (1-based index) |
+| fixIndex | integer | int | Yes | The index of the Quick Fix to apply (1-based, from getQuickFixes output) |
 
 ## call_hierarchy
 
@@ -43,7 +43,7 @@ Input schema type: object.
 | elementName | string | String | Yes | The name of the element. For types: fully qualified name (e.g., 'com.example.User'). For methods/fields: simple name (e.g., 'getName') or qualified name (e.g., 'com.example.User.getName') |
 | projectName | string | String | No | Optional project name to limit the search scope. If not specified, searches the entire workspace. |
 | scope | string | String | No | Search scope: 'workspace' (default) searches all projects, 'project' searches only the specified project |
-| includeSubtypes | string | Boolean | No | For type searches, include references to subtypes. Defaults to false. |
+| includeSubtypes | boolean | Boolean | No | For type searches, include references to subtypes. Defaults to false. |
 
 ## getImplementations
 
@@ -99,7 +99,7 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | File path relative to project root (e.g., 'src/Main.java') or absolute path starting with /ProjectName/ |
-| lineNumber | string | Integer | No | Line number to navigate to (1-based). Optional. |
+| lineNumber | integer | Integer | No | Line number to navigate to (1-based). Optional. |
 | projectName | string | String | No | Project name to help resolve relative paths. Optional. |
 
 ## open_type
@@ -122,7 +122,7 @@ Input schema type: object.
 | --- | --- | --- | --- | --- |
 | severity | string | String | No | Filter by severity level: 'error' (default), 'warning', or 'all' |
 | maxResults | string | String | No | Maximum number of problems to return (default: 10) |
-| skipUnknownLocation | string | Boolean | No | If true, skip problems without a valid file location or line number (default: false) |
+| skipUnknownLocation | boolean | Boolean | No | If true, skip problems without a valid file location or line number (default: false) |
 
 ## refresh
 

@@ -17,10 +17,10 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | Path to the file (relative or absolute) |
-| lineNumber | string | int | Yes | Line number (1-based) |
-| projectName | string | String | Yes | Optional project name for path resolution |
-| condition | string | String | Yes | Optional breakpoint condition expression (e.g., 'userId == null') |
-| hitCount | string | Integer | Yes | Optional hit count (breakpoint triggers after N hits) |
+| lineNumber | integer | int | Yes | Line number (1-based) |
+| projectName | string | String | No | Optional project name for path resolution |
+| condition | string | String | No | Optional breakpoint condition expression (e.g., 'userId == null') |
+| hitCount | integer | Integer | No | Optional hit count (breakpoint triggers after N hits) |
 
 ## createJavaLaunchConfiguration
 
@@ -50,8 +50,8 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | Path to the file |
-| lineNumber | string | int | Yes | Line number |
-| projectName | string | String | Yes | Optional project name |
+| lineNumber | integer | int | Yes | Line number |
+| projectName | string | String | No | Optional project name |
 
 ## enableBreakpoint
 
@@ -62,8 +62,8 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | Path to the file |
-| lineNumber | string | int | Yes | Line number |
-| projectName | string | String | Yes | Optional project name |
+| lineNumber | integer | int | Yes | Line number |
+| projectName | string | String | No | Optional project name |
 
 ## evaluateExpression
 
@@ -74,7 +74,7 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | expression | string | String | Yes | Expression to evaluate |
-| stackFrameIndex | string | Integer | Yes | Index of the stack frame (0 = top, default 0) |
+| stackFrameIndex | integer | Integer | No | Index of the stack frame (0 = top, default 0) |
 
 ## getDebugStatus
 
@@ -103,9 +103,9 @@ Input schema type: object.
 
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
-| maxDepth | string | Integer | Yes | Maximum number of frames to return (default 10) |
-| packageFilter | string | String | Yes | Only include frames from matching packages (e.g., 'com.example') |
-| skipFramework | string | Boolean | Yes | Skip framework packages like java.&#42;, javax.&#42;, org.eclipse.&#42; (default true) |
+| maxDepth | integer | Integer | No | Maximum number of frames to return (default 10) |
+| packageFilter | string | String | No | Only include frames from matching packages (e.g., 'com.example') |
+| skipFramework | boolean | Boolean | No | Skip framework packages like java.&#42;, javax.&#42;, org.eclipse.&#42; (default true) |
 
 ## getVariables
 
@@ -115,7 +115,7 @@ Input schema type: object.
 
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
-| stackFrameIndex | string | Integer | Yes | Index of the stack frame (0 = top, default 0) |
+| stackFrameIndex | integer | Integer | No | Index of the stack frame (0 = top, default 0) |
 
 ## listBreakpoints
 
@@ -149,7 +149,7 @@ Input schema type: object.
 
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
-| sessionName | string | String | Yes | Optional debug session name (uses focused or first active session if omitted) |
+| sessionName | string | String | No | Optional debug session name (uses focused or first active session if omitted) |
 
 ## removeBreakpoint
 
@@ -160,8 +160,8 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | Path to the file |
-| lineNumber | string | int | Yes | Line number |
-| projectName | string | String | Yes | Optional project name |
+| lineNumber | integer | int | Yes | Line number |
+| projectName | string | String | No | Optional project name |
 
 ## resume
 
@@ -191,7 +191,7 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | threadName | string | String | Yes | Name of the thread to focus (e.g., 'main'). Empty to reset focus. |
-| sessionName | string | String | Yes | Optional debug session name |
+| sessionName | string | String | No | Optional debug session name |
 
 ## stepInto
 

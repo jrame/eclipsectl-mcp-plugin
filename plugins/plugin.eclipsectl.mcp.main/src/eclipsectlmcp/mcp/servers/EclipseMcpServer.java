@@ -56,7 +56,7 @@ public class EclipseMcpServer
             @ToolParam(name="elementName", description="The name of the element. For types: fully qualified name (e.g., 'com.example.User'). For methods/fields: simple name (e.g., 'getName') or qualified name (e.g., 'com.example.User.getName')", required=true) String elementName,
             @ToolParam(name="projectName", description="Optional project name to limit the search scope. If not specified, searches the entire workspace.", required=false) String projectName,
             @ToolParam(name="scope", description="Search scope: 'workspace' (default) searches all projects, 'project' searches only the specified project", required=false) String scope,
-            @ToolParam(name="includeSubtypes", description="For type searches, include references to subtypes. Defaults to false.", required=false) Boolean includeSubtypes)
+            @ToolParam(name="includeSubtypes", description="For type searches, include references to subtypes. Defaults to false.", required=false, type="boolean") Boolean includeSubtypes)
     {
         return EclipseSearchService.findReferences(
             elementType,
@@ -79,7 +79,7 @@ public class EclipseMcpServer
     public String problems(
     		@ToolParam(name="severity", description="Filter by severity level: 'error' (default), 'warning', or 'all'", required=false) String severity,
             @ToolParam(name="maxResults", description="Maximum number of problems to return (default: 10)", required=false) String maxResults,
-            @ToolParam(name="skipUnknownLocation", description="If true, skip problems without a valid file location or line number (default: false)", required=false) Boolean skipUnknownLocation)
+            @ToolParam(name="skipUnknownLocation", description="If true, skip problems without a valid file location or line number (default: false)", required=false, type="boolean") Boolean skipUnknownLocation)
     {
         return eclipseProblemService.getProblems(severity, Optional.ofNullable( maxResults ).map( Integer::parseInt ).orElse( 0 ),
                 skipUnknownLocation != null && skipUnknownLocation);
@@ -100,8 +100,8 @@ public class EclipseMcpServer
     public String applyQuickFix(
     		@ToolParam(name="projectName", description="The name of the project containing the file. Optional if file path is unique across projects or starts with /projectName/", required=false) String projectName,
             @ToolParam(name="filePath", description="The path to the file relative to the project root (e.g., 'src/com/example/Main.java') or absolute path starting with /projectName/", required=true) String filePath,
-            @ToolParam(name="lineNumber", description="The line number where the problem is located (1-based index)", required=true) int lineNumber,
-            @ToolParam(name="fixIndex", description="The index of the Quick Fix to apply (1-based, from getQuickFixes output)", required=true) int fixIndex)
+            @ToolParam(name="lineNumber", description="The line number where the problem is located (1-based index)", required=true, type="integer") int lineNumber,
+            @ToolParam(name="fixIndex", description="The index of the Quick Fix to apply (1-based, from getQuickFixes output)", required=true, type="integer") int fixIndex)
     {
         return quickFixService.applyQuickFix(projectName, filePath, lineNumber, fixIndex);
     }
@@ -146,7 +146,7 @@ public class EclipseMcpServer
 	@Tool(name="openFile", description="Open a file in the Eclipse editor, optionally navigating to a specific line.", type="object")
     public String openFile(
     		@ToolParam(name="filePath", description="File path relative to project root (e.g., 'src/Main.java') or absolute path starting with /ProjectName/", required=true) String filePath,
-    		@ToolParam(name="lineNumber", description="Line number to navigate to (1-based). Optional.", required=false) Integer lineNumber,
+        @ToolParam(name="lineNumber", description="Line number to navigate to (1-based). Optional.", required=false, type="integer") Integer lineNumber,
     		@ToolParam(name="projectName", description="Project name to help resolve relative paths. Optional.", required=false) String projectName)
     {
         return editorService.openFile(filePath, lineNumber, projectName);

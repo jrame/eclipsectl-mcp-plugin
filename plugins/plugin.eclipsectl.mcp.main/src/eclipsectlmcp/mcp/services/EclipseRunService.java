@@ -141,17 +141,17 @@ public class EclipseRunService {
                     return "Launch '" + configurationName + "' completed (run mode).\n" +
                            "Log: " + logPath + "\n" +
                            "Exit code: " + result.getExitCode() + "\n" +
-                           "Duration: " + result.getDurationFormatted();
+                           "Duration: " + result.getDurationFormatted() + LaunchTestSummary.describe(launch);
                 } else {
                     return "Launch '" + configurationName + "' timed out after 120s (run mode).\n" +
                            "Log: " + logPath + "\n" +
-                           "Status: STILL RUNNING";
+                           "Status: STILL RUNNING" + LaunchTestSummary.describe(launch);
                 }
             } else {
                 return "Launch '" + configurationName + "' started (run mode).\n" +
                        "Log: " + logPath + "\n" +
                        "Status: RUNNING\n" +
-                       "Use getLaunchStatus to check completion.";
+                       "Use getLaunchStatus to check completion." + LaunchTestSummary.describe(launch);
             }
 
         } catch (Exception e) {

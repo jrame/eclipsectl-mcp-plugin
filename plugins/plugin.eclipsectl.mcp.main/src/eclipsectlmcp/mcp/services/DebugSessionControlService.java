@@ -5,6 +5,7 @@ import eclipsectlmcp.mcp.ToolExecution;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
@@ -29,51 +30,44 @@ public class DebugSessionControlService extends DebugServiceBase {
 	 */
 	public String runDebug(String configName, boolean waitForCompletion) {
 		try {
-			return uiSync.syncCall(() -> {
-				ILaunchManager launchManager = DebugPlugin.getDefault().getLaunchManager();
-
-				ILaunchConfiguration[] configs = launchManager.getLaunchConfigurations();
-
-				ILaunchConfiguration targetConfig = null;
-				for (ILaunchConfiguration config : configs) {
-					if (config.getName().equalsIgnoreCase(configName)) {
-						targetConfig = config;
-						break;
-					}
-				}
-
-				if (targetConfig == null) {
-					return ToolExecution.error("Error: Debug configuration '" + configName + "' not found. " +
-							"Use listRunConfigurations to see available configurations.");
-				}
-
-				ILaunch launch = targetConfig.launch(ILaunchManager.DEBUG_MODE, null);
-
-				String logPath = launchLogService.startLogging(launch, configName, "debug");
-
-				if (waitForCompletion) {
-					LaunchLogService.TerminationResult result = launchLogService.waitForTermination(launch, 120_000);
-					if (result != null) {
-						return "Launch '" + configName + "' completed (debug mode).\n" +
-								"Log: " + logPath + "\n" +
-								"Exit code: " + result.getExitCode() + "\n" +
-								"Duration: " + result.getDurationFormatted();
-					} else {
-						return "Launch '" + configName + "' timed out after 120s (debug mode).\n" +
-								"Log: " + logPath + "\n" +
-								"Status: STILL RUNNING";
-					}
-				} else {
-					return "Launch '" + configName + "' started (debug mode).\n" +
+			ILaunch launch = uiSync.syncCall(() -> launchDebugConfiguration(configName));
+			if (launch == null) {
+				return ToolExecution.error("Error: Debug configuration '" + configName + "' not found. " +
+						"Use listRunConfigurations to see available configurations.");
+			}
+			// TestNG connects its result receiver via async UI work after launching.
+			// Waiting on that thread prevents the test run from completing.
+			String logPath = launchLogService.startLogging(launch, configName, "debug");
+			if (waitForCompletion) {
+				LaunchLogService.TerminationResult result = launchLogService.waitForTermination(launch, 120_000);
+				if (result != null) {
+					return "Launch '" + configName + "' completed (debug mode).\n" +
 							"Log: " + logPath + "\n" +
-							"Status: RUNNING\n" +
-							"Use getDebugStatus to check session status.";
+							"Exit code: " + result.getExitCode() + "\n" +
+							"Duration: " + result.getDurationFormatted() + LaunchTestSummary.describe(launch);
 				}
-			});
+				return "Launch '" + configName + "' timed out after 120s (debug mode).\n" +
+						"Log: " + logPath + "\n" +
+						"Status: STILL RUNNING" + LaunchTestSummary.describe(launch);
+			}
+			return "Launch '" + configName + "' started (debug mode).\n" +
+					"Log: " + logPath + "\n" +
+					"Status: RUNNING\n" +
+					"Use getDebugStatus to check session status." + LaunchTestSummary.describe(launch);
 		} catch (Exception e) {
 			logger.error("Error launching debug configuration", e);
 			return ToolExecution.error("Error: " + e.getMessage());
 		}
+	}
+
+	ILaunch launchDebugConfiguration(String configName) throws CoreException {
+		ILaunchManager manager = DebugPlugin.getDefault().getLaunchManager();
+		for (ILaunchConfiguration config : manager.getLaunchConfigurations()) {
+			if (config.getName().equalsIgnoreCase(configName)) {
+				return config.launch(ILaunchManager.DEBUG_MODE, null);
+			}
+		}
+		return null;
 	}
 
 	/**

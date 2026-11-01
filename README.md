@@ -9,7 +9,7 @@ This project is a fork of [AssistAI](https://github.com/gradusnikov/eclipse-chat
 ## Features
 
 <!-- BEGIN GENERATED MCP COUNT -->
-EclipseCtl MCP exposes **97 MCP tools** across 7 main servers, allowing AI assistants to:
+EclipseCtl MCP exposes **98 MCP tools** across 7 main servers, allowing AI assistants to:
 <!-- END GENERATED MCP COUNT -->
 
 - **Workspace State**: `getWorkspaceState` reports `Workspace status: idle|busy` and `Build status: idle|busy` for bounded client polling. Build state covers Eclipse auto/manual builds (including delayed builds); unrelated sleeping maintenance jobs do not prevent idle. This is a snapshot and does not start a build or track external Maven processes.
@@ -39,7 +39,7 @@ Tool calls preserve human-readable text and set MCP `isError=true` for reported 
 | [eclipse-codegen](docs/mcp-tools/eclipse-codegen.md) | 3 |
 | [eclipse-coverage](docs/mcp-tools/eclipse-coverage.md) | 3 |
 | [eclipse-debug](docs/mcp-tools/eclipse-debug.md) | 23 |
-| [eclipse-ide](docs/mcp-tools/eclipse-ide.md) | 31 |
+| [eclipse-ide](docs/mcp-tools/eclipse-ide.md) | 32 |
 | [eclipse-refactor](docs/mcp-tools/eclipse-refactor.md) | 16 |
 | [eclipse-source](docs/mcp-tools/eclipse-source.md) | 8 |
 <!-- END GENERATED MCP SERVERS -->
@@ -56,7 +56,11 @@ java scripts/TestToolCatalog.java
 
 The catalogue reads the builtin registry and annotations directly from Java syntax trees, including annotation defaults. CI checks for documentation drift before downloading dependencies.
 
+The generator rejects schema types that disagree with Java parameters and exports [the machine-readable contract](docs/mcp-tool-contract.json). Copy that generated file into the CLI repository as `tests/plugin-tool-contract.json` after API changes. `ToolParameterContractTest` checks all builtin signatures by reflection, and `TypedToolHttpTest` verifies scalar arguments through the real HTTP transport and reflective executor. These checks cover native JSON values, legacy string clients, omitted nullable arguments and invalid scalar values.
+
 Java/JUnit/TestNG launch configuration creation, inspection, and environment updates are available in `eclipse-debug`. `createJavaLaunchConfiguration` accepts `type=java|junit4|junit5|testng|auto`; the default remains `java`, and TestNG requires the TestNG Eclipse plugin.
+
+Run and debug responses include `Tests (JUnit|TestNG): run: N, failed: N, skipped: N` for test launch configurations. JUnit counters come from the matching Eclipse test session (failures include errors; skips include ignored tests and failed assumptions). TestNG counters come directly from the matching native Eclipse SuiteRunInfo in the TestNG view/history; console output can be disabled. The optional adapter reads TestNG's internal model reflectively; incompatible versions report unavailable counts. Use `waitForCompletion=true` (CLI: `--wait`) for final counts. Running launches report partial counts or `results pending`; missing session/model results report `counts unavailable` instead of zero. Application launch output is unchanged.
 
 ## Installation
 
@@ -81,6 +85,11 @@ The existing Eclipse PDE workflow remains available. Import the projects into an
 Eclipse installation with PDE and JDK 21, open `site/site.xml`, then click
 **Build All** in the update-site editor. This builds the update site under `site/`.
 Keep `site/site.xml` in Git; its generated plugin JARs and p2 metadata are ignored.
+After changing the version in `features/feature.eclipsectl.mcp/feature.xml`, update
+the feature entry in `site/site.xml` too (both `version` and the JAR filename).
+For example, version `1.0.1.qualifier` uses
+`features/eclipsectlmcp_1.0.1.qualifier.jar`. A reference to an older feature
+version can prevent **Build** and **Build All** from exporting the current projects.
 
 On a fresh clone, first download the embedded dependencies using the bootstrap
 command below, then refresh the projects in Eclipse. The Maven/Tycho build is an
@@ -120,13 +129,37 @@ The PDE workbench uses Tycho's isolated workspace under
 `tests/plugin.eclipsectl.mcp.main.tests/target/work/data/`.
 Never point the test runtime at your development workspace. Test reports are under
 the test module's `target/surefire-reports/`.
-EclEmma is optional and absent from this target: the coverage tests exercise
-the unavailable-plugin response, not actual instrumentation.
+EclEmma remains optional for the installed plugin. The test bundle requires it
+for coverage export tests, including JaCoCo binary round trips.
 
 GitHub Actions runs the same bootstrap and `clean verify` for pull requests
 and main pushes. Publishing waits for success and uploads the generated p2
 repository and static homepage. Pull requests have read-only repository
 permission and cannot publish Pages.
+
+## Coverage session export
+
+`eclipsectl coverage run FooNgTest --wait` exports the new EclEmma session once
+that launch completes. Files are written under the **Eclipse workspace root**:
+
+```text
+.logs/eclipsectl/2026-10-26_21-15-30-123_FooNgTest.exec
+```
+
+The timestamp uses Eclipse's local time, including milliseconds. The launch
+configuration name is made filename-safe and truncated to 32 characters.
+Existing exports are never overwritten. The file contains JaCoCo binary execution
+data in the standard `.exec` format, importable in
+EclEmma. The response includes `Coverage session: <absolute path>`; the CLI also
+preserves this text in its JSON output. Like run/debug, coverage output includes
+the native JUnit/TestNG test counts (run, failed, skipped), when available. Pending
+or unavailable results are indicated explicitly rather than reported as zero.
+
+The export waits up to 15 additional seconds for EclEmma to publish the new session,
+outside the UI thread. Existing sessions and sessions for other configurations are
+excluded. Missing or ambiguous sessions and file errors produce a tool error while
+preserving the launch completion summary. Asynchronous calls and launches that
+time out after 120 seconds do not export a session.
 
 ## Configuration
 
@@ -318,7 +351,7 @@ See [CLAUDE.md](CLAUDE.md) for development guidelines and architecture documenta
 
 MIT License
 
-Copyright (c) 2026 Metherlance
+Copyright (c) 2026 jrame
 Based on Copyright (c) 2023 Wojciech Gradkowski (original AssistAI project, kept only MCP structure + HTTP)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -346,3 +379,35 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 Text replacements preserve untouched CRLF, LF and mixed line endings and do not add a final newline. Line replacement and insertion use the adjacent delimiter when a separator is needed; supplied content keeps its own delimiters. Line ranges are 1-based and inclusive and must be within the file; insertion accepts lines 1 through line-count + 1 (append). An empty file has one editable line.
 
 Disk edits refuse files with unsaved editor or connected text-buffer changes. Save or discard those changes before retrying. Files with external changes or changes since the edit snapshot are refused; refresh and review them before retrying. Writes retain Eclipse local history and do not force overwrites. Editor reloads skip unsaved documents.
+
+## Create Java projects
+
+The `eclipse-ide/createJavaProject` tool creates and opens a new JDT project.
+Parameters: required absolute `projectPath`, optional `projectName` (directory
+name by default), optional integer `javaVersion` (Java feature version, at least
+8), and optional string `junitVersion` (`5` only). The CLI binding is:
+
+```powershell
+eclipsectl project create B:\dev\example --java --project Example --java-version 21 --junit 5
+```
+
+The parent must exist and the target must not exist, even as an empty directory.
+Eclipse project names, workspace name/location conflicts and the runtime are
+validated before reservation. Creation uses Eclipse resource/JDT APIs, Java
+nature and builder, explicit UTF-8, and `src` -> `bin`. With JUnit 5, the Eclipse
+JUnit container is added with test scope and `test` -> `bin-test` uses its own
+output folder. No source files, build-tool files or launch configurations are
+generated. JUnit is omitted by default.
+
+Without `javaVersion`, the configured default Eclipse JRE and its version are
+used. An explicit version must have a supported `JavaSE-*` execution environment
+and a compatible installed JRE with available libraries. No JDK is downloaded
+and workspace JRE defaults are not changed. WSL Linux filesystem paths are
+unsupported. The CLI normalizes Windows/WSL Windows-drive paths before transport.
+
+Existing content is never overwritten. Filesystem reservation is atomic and
+workspace changes hold the workspace scheduling rule. A failure after reservation
+is a tool error reporting the partial path and project registration state;
+created files are retained for inspection. There is no automatic recursive
+cleanup or force option. `importProject` is unchanged. Regenerate the catalogue
+with `java scripts/GenerateToolCatalog.java` after changing the tool signature.

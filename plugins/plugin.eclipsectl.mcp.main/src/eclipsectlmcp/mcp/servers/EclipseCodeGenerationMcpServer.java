@@ -30,8 +30,8 @@ public class EclipseCodeGenerationMcpServer {
         @ToolParam(name="filePath", description="The path to the Java file relative to the project root (e.g., 'src/com/example/User.java') or absolute path starting with /projectName/", required=true) String filePath,
         @ToolParam(name="className", description="The name of the class within the file. Optional if the file contains only one class.", required=false) String className,
         @ToolParam(name="fieldNames", description="Comma-separated list of field names to generate methods for. If not specified, all fields will be processed.", required=false) String fieldNames,
-        @ToolParam(name="generateGetters", description="Whether to generate getter methods. Defaults to true.", required=false) Boolean generateGetters,
-        @ToolParam(name="generateSetters", description="Whether to generate setter methods. Defaults to true.", required=false) Boolean generateSetters,
+        @ToolParam(name="generateGetters", description="Whether to generate getter methods. Defaults to true.", required=false, type="boolean") Boolean generateGetters,
+        @ToolParam(name="generateSetters", description="Whether to generate setter methods. Defaults to true.", required=false, type="boolean") Boolean generateSetters,
         @ToolParam(name="insertionPoint", description="Where to insert the generated methods: 'end' (default) to add at the end of the class, or a specific line number", required=false) String insertionPoint)
     {
         List<String> fields = (fieldNames != null && !fieldNames.isEmpty())
@@ -56,9 +56,9 @@ public class EclipseCodeGenerationMcpServer {
         @ToolParam(name="filePath", description="The path to the Java file relative to the project root (e.g., 'src/com/example/User.java') or absolute path starting with /projectName/", required=true) String filePath,
         @ToolParam(name="className", description="The name of the class within the file. Optional if the file contains only one class.", required=false) String className,
         @ToolParam(name="fieldNames", description="Comma-separated list of field names to include in the generated methods. If not specified, all fields will be included.", required=false) String fieldNames,
-        @ToolParam(name="generateToString", description="Whether to generate toString() method. Defaults to true.", required=false) Boolean generateToString,
-        @ToolParam(name="generateEquals", description="Whether to generate equals() method. Defaults to true.", required=false) Boolean generateEquals,
-        @ToolParam(name="generateHashCode", description="Whether to generate hashCode() method. Defaults to true.", required=false) Boolean generateHashCode)
+        @ToolParam(name="generateToString", description="Whether to generate toString() method. Defaults to true.", required=false, type="boolean") Boolean generateToString,
+        @ToolParam(name="generateEquals", description="Whether to generate equals() method. Defaults to true.", required=false, type="boolean") Boolean generateEquals,
+        @ToolParam(name="generateHashCode", description="Whether to generate hashCode() method. Defaults to true.", required=false, type="boolean") Boolean generateHashCode)
     {
         List<String> fields = (fieldNames != null && !fieldNames.isEmpty())
             ? Arrays.asList(fieldNames.split(",\\s*"))

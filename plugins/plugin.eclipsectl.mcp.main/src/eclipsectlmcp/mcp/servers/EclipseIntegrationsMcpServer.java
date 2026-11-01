@@ -111,6 +111,15 @@ public class EclipseIntegrationsMcpServer
         return projectService.listProjects();
     }
 
+    @Tool(name = "createJavaProject", description = "Create and open a new Java project using Eclipse JDT. Requires a nonexistent target and an existing parent directory. Uses the configured default JRE unless javaVersion is supplied; never downloads a JDK or overwrites files. Optional JUnit 5 uses test -> bin-test.", type = "object")
+    public String createJavaProject(
+            @ToolParam(name = "projectPath", description = "Absolute project path on a supported filesystem; target must not exist", required = true) String projectPath,
+            @ToolParam(name = "projectName", description = "Optional project name, defaults to directory name", required = false) String projectName,
+            @ToolParam(name = "javaVersion", description = "Optional Java feature version (8 or newer); requires a compatible installed JRE", required = false, type = "integer") Integer javaVersion,
+            @ToolParam(name = "junitVersion", description = "Optional JUnit version: 5; omitted means no tests or dependency", required = false) String junitVersion)
+    {
+        return projectService.createJavaProject(projectPath, projectName, javaVersion, junitVersion);
+    }
     @Tool(name = "importProject", description = "Import a project from a directory into the Eclipse workspace. Automatically detects project type (Eclipse project with .project file, Maven project with pom.xml, or generic project).", type = "object")
     public String importProject(
             @ToolParam(name = "projectPath", description = "The absolute path to the project directory to import", required = true) String projectPath,
@@ -135,7 +144,7 @@ public class EclipseIntegrationsMcpServer
     public String getConsoleOutput(
             @ToolParam(name = "consoleName", description = "Name of the specific console to retrieve (optional, leave empty for all or most recent console)", required = false) String consoleName,
             @ToolParam(name = "maxLines", description = "Maximum number of lines to retrieve (default: 100)", required = false) String maxLines,
-            @ToolParam(name = "includeAllConsoles", description = "Whether to include output from all available consoles (default: false)", required = false) Boolean includeAllConsoles)
+            @ToolParam(name = "includeAllConsoles", description = "Whether to include output from all available consoles (default: false)", required = false, type="boolean") Boolean includeAllConsoles)
     {
         return consoleService.getConsoleOutput(consoleName,
                 Optional.ofNullable(maxLines).map(Integer::parseInt).orElse(0), includeAllConsoles);
@@ -327,7 +336,7 @@ public class EclipseIntegrationsMcpServer
             @ToolParam(name = "fullyQualifiedClassName", description = "The fully qualified name of the class containing the method", required = true) String fullyQualifiedClassName,
             @ToolParam(name = "methodName", description = "The name of the method to analyze", required = true) String methodName,
             @ToolParam(name = "methodSignature", description = "The signature of the method (optional)", required = false) String methodSignature,
-            @ToolParam(name = "maxDepth", description = "Maximum depth of the call hierarchy to retrieve (default: 3)", required = false) Integer maxDepth)
+            @ToolParam(name = "maxDepth", description = "Maximum depth of the call hierarchy to retrieve (default: 3)", required = false, type="integer") Integer maxDepth)
     {
         return codeAnalysisService.getMethodCallHierarchy(fullyQualifiedClassName, methodName, methodSignature, maxDepth);
     }
@@ -338,7 +347,7 @@ public class EclipseIntegrationsMcpServer
     public String getCompilationErrors(
             @ToolParam(name = "projectName", description = "The name of the project to check (optional, if not specified checks all projects)", required = false) String projectName,
             @ToolParam(name = "severity", description = "Filter by severity level: 'ERROR', 'WARNING', or 'ALL' (default: 'ALL')", required = false) String severity,
-            @ToolParam(name = "maxResults", description = "Maximum number of problems to return (default: 100)", required = false) Integer maxResults)
+            @ToolParam(name = "maxResults", description = "Maximum number of problems to return (default: 50)", required = false, type = "integer") Integer maxResults)
     {
         return codeAnalysisService.getCompilationErrors(projectName, severity, maxResults);
     }

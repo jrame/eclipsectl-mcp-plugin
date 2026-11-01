@@ -7,10 +7,13 @@ Export-Package: eclipsectlmcp.mcp.services,
  eclipsectlmcp.mcp.servers,
  eclipsectlmcp.tools
 Fragment-Host: eclipsectlmcp.plugin.main
-Require-Bundle: junit-jupiter-api,
+Require-Bundle: org.eclipse.eclemma.core,
+ org.jacoco.core,
+ junit-jupiter-api,
  org.opentest4j,
  org.eclipse.jdt.core,
  org.eclipse.jdt.launching,
+ org.eclipse.jdt.junit5.runtime,
  slf4j.api
 Automatic-Module-Name: plugin.eclipsectl.mcp.main.tests
 Bundle-RequiredExecutionEnvironment: JavaSE-21

@@ -147,7 +147,20 @@ public class GenerateToolCatalog {
                     String name = string(a, "name");
                     if (name.isBlank()) name = p.getName().toString();
                     require(names.add(identifier(name)), "Duplicate parameter " + name);
-                    params.add(new Param(name, string(a, "type"), p.getType().toString(), (Boolean) a.get("required"), string(a, "description")));
+                    String javaType = p.getType().toString();
+                    String expected = switch (javaType) {
+                        case "String" -> "string";
+                        case "int", "Integer" -> "integer";
+                        case "boolean", "Boolean" -> "boolean";
+                        case "Object" -> string(a, "type"); // Legacy search pattern adapter accepts strings and lists.
+                        default -> javaType.startsWith("Map<") ? "object" : javaType.startsWith("List<") ? "array" : null;
+                    };
+                    require(expected != null && expected.equals(string(a, "type")),
+                            "Schema/Java type mismatch: " + className + "." + m.getName() + "." + name
+                            + " schema=" + string(a, "type") + " Java=" + javaType);
+                    require(!Set.of("int", "boolean").contains(javaType) || (Boolean) a.get("required"),
+                            "Primitive parameter must be required: " + className + "." + m.getName() + "." + name);
+                    params.add(new Param(name, string(a, "type"), javaType, (Boolean) a.get("required"), string(a, "description")));
                 }
                 String name = identifier(string(t, "name"));
                 require(tools.putIfAbsent(name, new Tool(name, string(t, "type"), string(t, "description"), params)) == null,
@@ -203,6 +216,22 @@ public class GenerateToolCatalog {
             }
             output.put(Path.of("docs/mcp-tools/" + s.name() + ".md"), page.toString().stripTrailing() + "\n");
         }
+        var contract = new StringBuilder("[\n");
+        boolean firstTool = true;
+        for (var server : servers) for (var tool : server.tools()) {
+            if (!firstTool) contract.append(",\n");
+            firstTool = false;
+            contract.append("  {\"server\":\"").append(server.name()).append("\",\"tool\":\"").append(tool.name()).append("\",\"params\":[");
+            boolean firstParam = true;
+            for (var param : tool.params()) {
+                if (!firstParam) contract.append(',');
+                firstParam = false;
+                contract.append("{\"name\":\"").append(param.name()).append("\",\"type\":\"").append(param.type())
+                        .append("\",\"javaType\":\"").append(param.javaType()).append("\",\"required\":").append(param.required()).append('}');
+            }
+            contract.append("]}");
+        }
+        output.put(Path.of("docs/mcp-tool-contract.json"), contract.append("\n]\n").toString());
         output.put(Path.of("docs/mcp-tools.md"), index.toString());
         String readme = normalized(Files.readString(root.resolve("README.md")));
         readme = replaceBlock(readme, "MCP COUNT", "EclipseCtl MCP exposes **" + total + " MCP tools** across " + servers.size() + " main servers, allowing AI assistants to:");

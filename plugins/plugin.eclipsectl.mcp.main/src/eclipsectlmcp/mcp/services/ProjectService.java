@@ -23,6 +23,13 @@ public class ProjectService {
     @Inject
     private ProjectImportService importService;
 
+    @Inject
+    private ProjectCreationService creationService;
+
+    public String createJavaProject(String path, String name, Integer javaVersion, String junitVersion) {
+        return creationService.createJavaProject(path, name, javaVersion, junitVersion);
+    }
+
     /**
      * Lists all available projects in the workspace with their detected natures.
      *

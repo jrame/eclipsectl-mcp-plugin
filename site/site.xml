@@ -3,5 +3,5 @@
    <description name="eclipsectl-mcp - Model Context Protocol server for Eclipse IDE" url="https://github.com/jrame/eclipsectl-mcp-plugin">
       eclipsectl-mcp - Model Context Protocol server for Eclipse IDE
    </description>
-   <feature url="features/eclipsectlmcp_1.0.0.202610250953.jar" id="eclipsectlmcp" version="1.0.0.202610250953"/>
+   <feature url="features/eclipsectlmcp_1.0.1.202610311833.jar" id="eclipsectlmcp" version="1.0.1.202610311833"/>
 </site>

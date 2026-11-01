@@ -35,4 +35,4 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | configName | string | String | Yes | Name of the launch configuration to run with coverage |
-| waitForCompletion | boolean | Boolean | No | If true, waits for the process to terminate (max 120s). Default: false |
+| waitForCompletion | boolean | Boolean | No | If true, waits for termination (max 120s), then reports JUnit/TestNG test counts and exports the new JaCoCo .exec session to workspace .logs/eclipsectl (up to 15s for session availability). The output includes the absolute export path. Default: false |

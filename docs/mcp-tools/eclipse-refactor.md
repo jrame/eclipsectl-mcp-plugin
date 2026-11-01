@@ -37,7 +37,7 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | Java file relative to project, /project/path, or native absolute path |
-| offset | string | int | Yes | Zero-based UTF-16 offset in the saved Java source |
+| offset | integer | int | Yes | Zero-based UTF-16 offset in the saved Java source |
 | newName | string | String | No | newName |
 | returnType | string | String | No | returnType |
 | visibility | string | String | No | Visibility: public, protected, private or package |
@@ -54,8 +54,8 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | Java file relative to project, /project/path, or native absolute path |
-| offset | string | int | Yes | Zero-based UTF-16 offset in the saved Java source |
-| length | string | int | Yes | Selection length in UTF-16 code units (positive) |
+| offset | integer | int | Yes | Zero-based UTF-16 offset in the saved Java source |
+| length | integer | int | Yes | Selection length in UTF-16 code units (positive) |
 | constantName | string | String | Yes | constantName |
 | visibility | string | String | No | Visibility: public, protected, private or package |
 | replaceAll | boolean | Boolean | No | Replace all matching occurrences (plugin default: false) |
@@ -72,8 +72,8 @@ Input schema type: object.
 | --- | --- | --- | --- | --- |
 | projectName | string | String | No | The name of the project containing the Java file. Optional if file path is unique across projects or starts with /projectName/ |
 | filePath | string | String | Yes | The path to the Java file relative to the project root (e.g., 'src/com/example/Calculator.java') or absolute path starting with /projectName/ |
-| startLine | string | int | Yes | The starting line number of the code block to extract (1-based index, inclusive) |
-| endLine | string | int | Yes | The ending line number of the code block to extract (1-based index, inclusive) |
+| startLine | integer | int | Yes | The starting line number of the code block to extract (1-based index, inclusive) |
+| endLine | integer | int | Yes | The ending line number of the code block to extract (1-based index, inclusive) |
 | methodName | string | String | Yes | The name for the new extracted method |
 | visibility | string | String | No | The visibility modifier for the new method: 'public', 'private', 'protected', or 'package'. Defaults to 'private' |
 
@@ -86,8 +86,8 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | Java file relative to project, /project/path, or native absolute path |
-| offset | string | int | Yes | Zero-based UTF-16 offset in the saved Java source |
-| length | string | int | Yes | Selection length in UTF-16 code units (positive) |
+| offset | integer | int | Yes | Zero-based UTF-16 offset in the saved Java source |
+| length | integer | int | Yes | Selection length in UTF-16 code units (positive) |
 | variableName | string | String | Yes | variableName |
 | replaceAll | boolean | Boolean | No | Replace all matching occurrences (plugin default: false) |
 | declareFinal | boolean | Boolean | No | Declare the extracted variable final (plugin default: false) |
@@ -103,7 +103,7 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | previewId | string | String | Yes | ID returned by a position-based refactoring with preview=true |
-| offset | string | Integer | No | Zero-based report character offset (default: 0); use the next offset returned by the preceding page |
+| offset | integer | Integer | No | Zero-based report character offset (default: 0); use the next offset returned by the preceding page |
 
 ## refactorInlineMethod
 
@@ -114,7 +114,7 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | Java file relative to project, /project/path, or native absolute path |
-| offset | string | int | Yes | Zero-based UTF-16 offset in the saved Java source |
+| offset | integer | int | Yes | Zero-based UTF-16 offset in the saved Java source |
 | inlineAll | boolean | Boolean | No | Inline all invocations (default: true at declaration, false at invocation) |
 | deleteSource | boolean | Boolean | No | Delete the method declaration (requires all invocations; default: false) |
 | projectName | string | String | No | Optional project name |
@@ -129,7 +129,7 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | Java file relative to project, /project/path, or native absolute path |
-| offset | string | int | Yes | Zero-based UTF-16 offset in the saved Java source |
+| offset | integer | int | Yes | Zero-based UTF-16 offset in the saved Java source |
 | projectName | string | String | No | Optional project name |
 | preview | boolean | Boolean | No | Create a frozen preview and one-use previewId for refactorApplyPreview (default: false). False applies directly against current source without preview protection. |
 
@@ -154,7 +154,7 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | Java file relative to project, /project/path, or native absolute path |
-| offset | string | int | Yes | Zero-based UTF-16 offset in the saved Java source |
+| offset | integer | int | Yes | Zero-based UTF-16 offset in the saved Java source |
 | newName | string | String | Yes | newName |
 | projectName | string | String | No | Optional project name |
 | preview | boolean | Boolean | No | Create a frozen preview and one-use previewId for refactorApplyPreview (default: false). False applies directly against current source without preview protection. |
@@ -180,7 +180,7 @@ Input schema type: object.
 | Parameter | Schema type | Java type | Required | Description |
 | --- | --- | --- | --- | --- |
 | filePath | string | String | Yes | Java file relative to project, /project/path, or native absolute path |
-| offset | string | int | Yes | Zero-based UTF-16 offset in the saved Java source |
+| offset | integer | int | Yes | Zero-based UTF-16 offset in the saved Java source |
 | newName | string | String | Yes | newName |
 | projectName | string | String | No | Optional project name |
 | preview | boolean | Boolean | No | Create a frozen preview and one-use previewId for refactorApplyPreview (default: false). False applies directly against current source without preview protection. |

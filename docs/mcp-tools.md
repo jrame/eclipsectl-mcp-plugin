@@ -2,7 +2,7 @@
 
 # MCP tool catalogue
 
-97 tools across 7 builtin servers.
+98 tools across 7 builtin servers.
 
 Generated from `McpServerBuiltins`, `@McpServer`, `@Tool`, and `@ToolParam` with JDK 21, without Eclipse.
 Schema types and required flags below are the annotation values, including defaults. Java types are shown separately.
@@ -14,6 +14,6 @@ Runtime argument defaults, when applicable, are described in the annotation text
 | [eclipse-codegen](mcp-tools/eclipse-codegen.md) | 1.0.0 | 3 |  |
 | [eclipse-coverage](mcp-tools/eclipse-coverage.md) | 1.0.0 | 3 | Eclipse code coverage tools using EclEmma for test coverage analysis |
 | [eclipse-debug](mcp-tools/eclipse-debug.md) | 1.0.0 | 23 | Eclipse debugging tools for breakpoint management, debug session control, and runtime inspection |
-| [eclipse-ide](mcp-tools/eclipse-ide.md) | 1.0.0 | 31 |  |
+| [eclipse-ide](mcp-tools/eclipse-ide.md) | 1.0.0 | 32 |  |
 | [eclipse-refactor](mcp-tools/eclipse-refactor.md) | 1.0.0 | 16 |  |
 | [eclipse-source](mcp-tools/eclipse-source.md) | 1.0.0 | 8 |  |
