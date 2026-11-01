@@ -137,6 +137,15 @@ and main pushes. Publishing waits for success and uploads the generated p2
 repository and static homepage. Pull requests have read-only repository
 permission and cannot publish Pages.
 
+Publishing a GitHub release also runs the bootstrap and full verification against
+its tag, then attaches the two generated `eclipsectlmcp.plugin.dependencies_*.jar`
+and `eclipsectlmcp.plugin.main_*.jar` files to that release. The upload job alone
+has write access to release assets; release builds do not deploy Pages.
+To attach JARs to an existing release, run **Build and publish Eclipse update site**
+manually from `main` and set `release_tag` to its tag (for example, `v1.0.2`).
+The selected tag is built, rather than the current `main` code. Re-running this
+operation replaces assets with the same filenames.
+
 ## Coverage session export
 
 `eclipsectl coverage run FooNgTest --wait` exports the new EclEmma session once

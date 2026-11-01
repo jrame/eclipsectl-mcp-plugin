@@ -3,7 +3,14 @@ on:
   push:
     branches: [main]
   pull_request:
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing release tag to build and attach plugin JARs to (leave blank for a normal build)'
+        required: false
+        type: string
 permissions:
   contents: read
 jobs:
@@ -12,6 +19,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.release_tag && format('refs/tags/{0}', inputs.release_tag) || github.ref }}
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
@@ -39,7 +48,7 @@ jobs:
   publish:
     timeout-minutes: 10
     needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.event_name != 'release' && inputs.release_tag == '' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     permissions:
       pages: write
@@ -62,3 +71,34 @@ jobs:
           include-hidden-files: true
       - uses: actions/deploy-pages@v5
         id: deployment
+  release-assets:
+    timeout-minutes: 10
+    needs: build
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    concurrency:
+      group: release-assets-${{ github.event.release.tag_name || inputs.release_tag }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: eclipsectl-update-site
+          path: release-site
+      - name: Attach plugin JARs to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          dependencies=(release-site/plugins/eclipsectlmcp.plugin.dependencies_*.jar)
+          main=(release-site/plugins/eclipsectlmcp.plugin.main_*.jar)
+          if (( ${#dependencies[@]} != 1 || ${#main[@]} != 1 )); then
+            echo 'Expected exactly one dependencies JAR and one main JAR in the verified update site.' >&2
+            exit 1
+          fi
+          gh release upload "$RELEASE_TAG" "${dependencies[0]}" "${main[0]}" --clobber
